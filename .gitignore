@@ -1,0 +1,22 @@
+*.iml
+.gradle/
+build/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Machine-specific, contains the local Android SDK path.
+local.properties
+
+# IDE
+.idea/
+!.idea/icon.png
+
+# Claude Code: the agent definition is committed on purpose, local settings are not.
+.claude/settings.local.json
+
+# Original take-home brief is retained locally and not published.
+requirement.md
+
+# macOS
+.DS_Store

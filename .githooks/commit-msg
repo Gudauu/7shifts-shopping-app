@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Rejects commit messages that do not follow the convention in AGENTS.md.
+# Enable once per clone with:
+#
+#   git config core.hooksPath .githooks
+
+msg_file="$1"
+subject=$(sed -n '1p' "$msg_file")
+
+# Let git's own generated messages through.
+case "$subject" in
+	Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+fail() {
+	echo "commit-msg: $1" >&2
+	echo "" >&2
+	echo "  Expected  type(scope): imperative subject" >&2
+	echo "  Types     feat fix refactor test docs chore build ci perf" >&2
+	echo "  Subject   under 72 chars, no trailing period" >&2
+	echo "  Body      wrapped at 72 columns, explains why" >&2
+	exit 1
+}
+
+echo "$subject" |
+	grep -Eq '^(feat|fix|refactor|test|docs|chore|build|ci|perf)(\([a-z0-9._-]+\))?: .+' ||
+	fail "subject does not match 'type(scope): subject'"
+
+case "$subject" in
+	*.) fail "subject must not end with a period" ;;
+esac
+
+if [ "${#subject}" -gt 72 ]; then
+	fail "subject is ${#subject} characters"
+fi
+
+# Body lines wrap at 72. Lines without spaces (URLs, paths) are exempt.
+awk '
+	/^# ------------------------ >8 ------------------------$/ { exit }
+	/^#/ { next }
+	NR > 2 && length($0) > 72 && $0 ~ / / {
+		print "  line " NR " is " length($0) " chars" > "/dev/stderr"
+		bad = 1
+	}
+	END { exit bad }
+' "$msg_file" || fail "body lines must wrap at 72 columns"
+
+exit 0
