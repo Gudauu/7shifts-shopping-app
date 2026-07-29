@@ -16,10 +16,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,6 +42,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -57,6 +61,7 @@ fun CatalogScreen(
     onRetry: () -> Unit,
     onSortSelected: (PriceSortOrder?) -> Unit,
     onCategoryToggled: (String) -> Unit,
+    onAddToCart: (FoodItem) -> Unit,
     onViewCart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -66,8 +71,16 @@ fun CatalogScreen(
             TopAppBar(
                 title = { Text("Food items") },
                 actions = {
+                    val cartItemCount = (state as? CatalogUiState.Content)?.cartItemCount ?: 0
                     TextButton(onClick = onViewCart) {
                         Text("View cart")
+                        // An empty cart shows no badge at all; a permanent "0" would
+                        // read as something needing attention.
+                        if (cartItemCount > 0) {
+                            Badge(modifier = Modifier.padding(start = 6.dp)) {
+                                Text(cartItemCount.toString())
+                            }
+                        }
                     }
                 },
             )
@@ -113,6 +126,7 @@ fun CatalogScreen(
                                     items = state.items,
                                     sort = state.sort,
                                     selectedCategoryIds = state.selectedCategoryIds,
+                                    onAddToCart = onAddToCart,
                                     modifier = Modifier.weight(1f),
                                 )
                             }
@@ -249,6 +263,7 @@ private fun FoodItemGrid(
     items: List<FoodItem>,
     sort: PriceSortOrder?,
     selectedCategoryIds: Set<String>,
+    onAddToCart: (FoodItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -271,13 +286,13 @@ private fun FoodItemGrid(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(items = items, key = { it.id }) { item ->
-            FoodItemCard(item = item)
+            FoodItemCard(item = item, onAddToCart = onAddToCart)
         }
     }
 }
 
 @Composable
-private fun FoodItemCard(item: FoodItem, modifier: Modifier = Modifier) {
+private fun FoodItemCard(item: FoodItem, onAddToCart: (FoodItem) -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
         val imagePlaceholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant)
         AsyncImage(
@@ -311,10 +326,26 @@ private fun FoodItemCard(item: FoodItem, modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                text = formatPrice(item.price),
-                style = MaterialTheme.typography.titleSmall,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = formatPrice(item.price),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                FilledTonalButton(
+                    onClick = { onAddToCart(item) },
+                    // Every card shows the same "Add" label, so the description names
+                    // the item for TalkBack instead of announcing thirty bare "Add"s.
+                    modifier = Modifier.semantics {
+                        contentDescription = "Add ${item.name} to the cart"
+                    },
+                ) {
+                    Text("Add")
+                }
+            }
         }
     }
 }

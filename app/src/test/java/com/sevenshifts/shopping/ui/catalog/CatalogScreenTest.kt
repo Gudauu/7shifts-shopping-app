@@ -12,11 +12,13 @@ import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sevenshifts.shopping.domain.Cart
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
 import com.sevenshifts.shopping.testing.catalog
 import com.sevenshifts.shopping.testing.foodCategory
@@ -53,6 +55,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -70,6 +73,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -85,6 +89,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -100,6 +105,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -115,6 +121,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -132,6 +139,7 @@ class CatalogScreenTest {
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
+                onAddToCart = {},
                 onViewCart = {},
             )
         }
@@ -148,6 +156,7 @@ class CatalogScreenTest {
                     Result.success(catalog(listOf(foodItem(name = "Bananas")))),
                 ),
             ),
+            Cart(),
         )
         setContent(viewModel)
 
@@ -291,6 +300,7 @@ class CatalogScreenTest {
                     ),
                 ),
             ),
+            Cart(),
         )
         setContent(viewModel)
         composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Milk"))
@@ -301,6 +311,45 @@ class CatalogScreenTest {
         composeRule.onNodeWithText("Bananas").assertIsDisplayed()
     }
 
+    @Test
+    fun `no badge shows while the cart is empty`() {
+        setContent(filterableCatalogViewModel())
+
+        composeRule.onNodeWithText("0").assertDoesNotExist()
+    }
+
+    @Test
+    fun `tapping add on an item shows its count on the cart badge`() {
+        setContent(filterableCatalogViewModel())
+
+        addButton("Bananas").performClick()
+
+        composeRule.onNodeWithText("1").assertIsDisplayed()
+    }
+
+    @Test
+    fun `adding the same item three times shows a badge count of 3`() {
+        setContent(filterableCatalogViewModel())
+
+        repeat(3) { addButton("Bananas").performClick() }
+
+        composeRule.onNodeWithText("3").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the badge counts every added item rather than distinct items`() {
+        setContent(filterableCatalogViewModel())
+
+        addButton("Bananas").performClick()
+        addButton("Bananas").performClick()
+        addButton("Milk").performClick()
+
+        composeRule.onNodeWithText("3").assertIsDisplayed()
+    }
+
+    private fun addButton(itemName: String): SemanticsNodeInteraction =
+        composeRule.onNodeWithContentDescription("Add $itemName to the cart")
+
     private fun setContent(viewModel: CatalogViewModel) {
         composeRule.setContent {
             val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -309,6 +358,7 @@ class CatalogScreenTest {
                 onRetry = viewModel::retry,
                 onSortSelected = viewModel::onSortSelected,
                 onCategoryToggled = viewModel::onCategoryToggled,
+                onAddToCart = viewModel::onAddToCart,
                 onViewCart = {},
             )
         }
@@ -344,6 +394,7 @@ class CatalogScreenTest {
                     ),
                 ),
             ),
+            Cart(),
         )
     }
 

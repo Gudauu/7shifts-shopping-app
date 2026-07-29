@@ -2,11 +2,14 @@ package com.sevenshifts.shopping.ui.catalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sevenshifts.shopping.domain.Cart
 import com.sevenshifts.shopping.domain.Catalog
 import com.sevenshifts.shopping.domain.CatalogRepository
+import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
 import com.sevenshifts.shopping.domain.filteredByCategories
 import com.sevenshifts.shopping.domain.sortedByPrice
+import com.sevenshifts.shopping.domain.totalQuantity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -19,7 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class CatalogViewModel @Inject constructor(private val repository: CatalogRepository) : ViewModel() {
+class CatalogViewModel @Inject constructor(private val repository: CatalogRepository, private val cart: Cart) :
+    ViewModel() {
     private sealed interface LoadState {
         data object Loading : LoadState
 
@@ -34,7 +38,7 @@ class CatalogViewModel @Inject constructor(private val repository: CatalogReposi
     private val selectedCategoryIds = MutableStateFlow<Set<String>>(emptySet())
 
     val uiState: StateFlow<CatalogUiState> =
-        combine(loadState, sort, selectedCategoryIds) { load, sort, selected ->
+        combine(loadState, sort, selectedCategoryIds, cart.lines) { load, sort, selected, cartLines ->
             when (load) {
                 LoadState.Loading -> CatalogUiState.Loading
 
@@ -51,6 +55,7 @@ class CatalogViewModel @Inject constructor(private val repository: CatalogReposi
                         sort = sort,
                         categories = load.catalog.categories,
                         selectedCategoryIds = selected,
+                        cartItemCount = cartLines.totalQuantity,
                     )
                 }
             }
@@ -71,6 +76,11 @@ class CatalogViewModel @Inject constructor(private val repository: CatalogReposi
     /** Null clears the sort and restores the API's order. */
     fun onSortSelected(order: PriceSortOrder?) {
         sort.value = order
+    }
+
+    /** Adding is silent and unbounded; the badge in the state is the feedback. */
+    fun onAddToCart(item: FoodItem) {
+        cart.add(item)
     }
 
     /** Selections are additive; toggling the last one off restores the full list. */

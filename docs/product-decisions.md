@@ -78,6 +78,17 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issues #5–#7 assumptions. -->
 
+- **The badge disappears at zero rather than showing 0** (Issue #5). The initial
+  assumptions cover what the badge counts but not what an empty cart looks like. A
+  permanently visible "0" reads as something needing attention, so the "View cart"
+  action shows no badge until the first add, and the badge itself is the confirmation
+  that an add landed.
+- **The cart stores lines of item and quantity, keyed by uuid** (Issue #5). The badge
+  only needs a total, but re-adding an item has to register somewhere, and a line with a
+  quantity is the direct representation of "the same item can be added repeatedly". It
+  also preserves first-added order, which issue #6 assumes for the cart rows, without
+  the cart screen having to aggregate raw adds itself.
+
 ## Purchase
 
 <!-- New decisions or deviations from Issue #8 assumptions and contract design. -->
