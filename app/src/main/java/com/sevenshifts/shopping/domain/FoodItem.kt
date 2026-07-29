@@ -14,7 +14,7 @@ data class FoodItem(
      * Null when the item's `category_uuid` matches no known category. The item is still
      * shown; losing a purchasable item over a metadata gap is the worse failure.
      */
-    val categoryName: String?,
+    val category: FoodCategory?,
     /** Null when the API omits the image; the card shows a placeholder instead of hiding the item. */
     val imageUrl: String?,
 )

@@ -1,5 +1,6 @@
 package com.sevenshifts.shopping.ui.catalog
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.sevenshifts.shopping.domain.FoodCategory
 import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
 import java.math.BigDecimal
@@ -47,6 +50,7 @@ fun CatalogScreen(
     state: CatalogUiState,
     onRetry: () -> Unit,
     onSortSelected: (PriceSortOrder?) -> Unit,
+    onCategoryToggled: (String) -> Unit,
     onViewCart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -76,7 +80,7 @@ fun CatalogScreen(
                     ErrorContent(onRetry = onRetry, modifier = Modifier.align(Alignment.Center))
 
                 is CatalogUiState.Content ->
-                    if (state.items.isEmpty()) {
+                    if (state.items.isEmpty() && state.selectedCategoryIds.isEmpty()) {
                         Text(
                             text = "No food items to show",
                             modifier = Modifier.align(Alignment.Center),
@@ -84,11 +88,28 @@ fun CatalogScreen(
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
                             PriceSortRow(sort = state.sort, onSortSelected = onSortSelected)
-                            FoodItemGrid(
-                                items = state.items,
-                                sort = state.sort,
-                                modifier = Modifier.weight(1f),
+                            CategoryFilterRow(
+                                categories = state.categories,
+                                selectedCategoryIds = state.selectedCategoryIds,
+                                onCategoryToggled = onCategoryToggled,
                             )
+                            if (state.items.isEmpty()) {
+                                // Only an active filter can empty the list here, so the
+                                // chips stay visible for the user to widen the selection.
+                                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                    Text(
+                                        text = "No items in the selected categories",
+                                        modifier = Modifier.align(Alignment.Center),
+                                    )
+                                }
+                            } else {
+                                FoodItemGrid(
+                                    items = state.items,
+                                    sort = state.sort,
+                                    selectedCategoryIds = state.selectedCategoryIds,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
             }
@@ -154,15 +175,45 @@ private fun PriceSortChip(
 }
 
 @Composable
-private fun FoodItemGrid(items: List<FoodItem>, sort: PriceSortOrder?, modifier: Modifier = Modifier) {
+private fun CategoryFilterRow(
+    categories: List<FoodCategory>,
+    selectedCategoryIds: Set<String>,
+    onCategoryToggled: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Chips keep the categories endpoint's order. The row scrolls sideways rather than
+    // wrapping so the grid keeps its vertical space on narrow screens.
+    Row(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        categories.forEach { category ->
+            FilterChip(
+                selected = category.id in selectedCategoryIds,
+                onClick = { onCategoryToggled(category.id) },
+                label = { Text(category.name) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FoodItemGrid(
+    items: List<FoodItem>,
+    sort: PriceSortOrder?,
+    selectedCategoryIds: Set<String>,
+    modifier: Modifier = Modifier,
+) {
     val gridState = rememberLazyGridState()
-    val activeSort by rememberUpdatedState(sort)
-    // The keyed items make the grid track the first visible card through a reorder, which
-    // reads as jumping to wherever that card lands. A sort change should present the top
-    // of the new order instead. Dropping the initial value keeps the scroll position when
-    // the composition is restored after a configuration change or navigation.
+    val activeControls by rememberUpdatedState(sort to selectedCategoryIds)
+    // The keyed items make the grid track the first visible card through a list change,
+    // which reads as jumping to wherever that card lands. A sort or filter change should
+    // present the top of the new list instead. Dropping the initial value keeps the scroll
+    // position when the composition is restored after a configuration change or navigation.
     LaunchedEffect(gridState) {
-        snapshotFlow { activeSort }
+        snapshotFlow { activeControls }
             .drop(1)
             .collect { gridState.scrollToItem(0) }
     }
@@ -208,9 +259,9 @@ private fun FoodItemCard(item: FoodItem, modifier: Modifier = Modifier) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            item.categoryName?.let { categoryName ->
+            item.category?.let { category ->
                 Text(
-                    text = categoryName,
+                    text = category.name,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

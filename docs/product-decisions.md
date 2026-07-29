@@ -57,6 +57,18 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issue #4 assumptions. -->
 
+- **The catalog exposes category identity, not just a display name** (Issue #4). The
+  filter needs a stable identity to match on, and the chips must offer every category the
+  endpoint returns, including one that no current item references. The repository
+  therefore returns the category list alongside the items, and each item carries its
+  resolved category (uuid and name) instead of a bare name. Matching on the uuid rather
+  than the display name keeps the filter correct if two categories ever share a name.
+- **Changing the filter presents the top of the new list** (Issue #4). The Issue #3
+  decision that applying a sort scrolls back to the top applies equally to toggling a
+  category chip: both replace the list, and the point of narrowing it is to see its
+  leading items. Restoring the screen after a configuration change or navigation still
+  keeps its scroll position.
+
 ## Cart
 
 <!-- New decisions or deviations from Issues #5–#7 assumptions. -->

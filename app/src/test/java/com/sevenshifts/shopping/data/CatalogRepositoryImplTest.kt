@@ -2,6 +2,8 @@ package com.sevenshifts.shopping.data
 
 import com.sevenshifts.shopping.data.network.ShoppingApi
 import com.sevenshifts.shopping.data.network.shoppingJson
+import com.sevenshifts.shopping.domain.Catalog
+import com.sevenshifts.shopping.domain.FoodCategory
 import com.sevenshifts.shopping.domain.FoodItem
 import java.io.IOException
 import java.math.BigDecimal
@@ -48,15 +50,19 @@ class CatalogRepositoryImplTest {
 
         val result = repository.loadCatalog()
 
+        val produce = FoodCategory(id = "cat-produce", name = "Produce")
         assertEquals(
-            listOf(
-                FoodItem(
-                    id = "item-1",
-                    name = "Bananas",
-                    price = BigDecimal("1.49"),
-                    categoryName = "Produce",
-                    imageUrl = "https://example.test/bananas.png",
+            Catalog(
+                items = listOf(
+                    FoodItem(
+                        id = "item-1",
+                        name = "Bananas",
+                        price = BigDecimal("1.49"),
+                        category = produce,
+                        imageUrl = "https://example.test/bananas.png",
+                    ),
                 ),
+                categories = listOf(produce),
             ),
             result.getOrThrow(),
         )
@@ -73,7 +79,7 @@ class CatalogRepositoryImplTest {
 
         val result = repository.loadCatalog()
 
-        assertEquals(listOf("item-1"), result.getOrThrow().map { it.id })
+        assertEquals(listOf("item-1"), result.getOrThrow().items.map { it.id })
     }
 
     @Test
