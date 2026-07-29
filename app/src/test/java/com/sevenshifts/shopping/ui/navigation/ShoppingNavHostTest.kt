@@ -1,6 +1,8 @@
 package com.sevenshifts.shopping.ui.navigation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasStateDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -70,7 +72,13 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithText("View cart").performClick()
         composeRule.onNodeWithText("Back").performClick()
 
-        composeRule.onNodeWithText("1").assertIsDisplayed()
+        composeRule
+            .onNode(
+                hasText("View cart") and
+                    hasText("1") and
+                    hasStateDescription("1 item in cart"),
+            )
+            .assertIsDisplayed()
     }
 
     @Test
@@ -85,7 +93,13 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithText("$1.49 / $1.49").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Remove Bananas from the cart").assertIsDisplayed()
         composeRule.onNodeWithText("Back").performClick()
-        composeRule.onNodeWithText("1").assertIsDisplayed()
+        composeRule
+            .onNode(
+                hasText("View cart") and
+                    hasText("1") and
+                    hasStateDescription("1 item in cart"),
+            )
+            .assertIsDisplayed()
     }
 
     // End to end across the two screens: adds made on the catalog are what the cart

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -327,7 +328,7 @@ class CatalogScreenTest {
 
         addButton("Bananas").performClick()
 
-        composeRule.onNodeWithText("1").assertIsDisplayed()
+        cartBadgeWithCount(1).assertIsDisplayed()
     }
 
     @Test
@@ -336,7 +337,7 @@ class CatalogScreenTest {
 
         repeat(3) { addButton("Bananas").performClick() }
 
-        composeRule.onNodeWithText("3").assertIsDisplayed()
+        cartBadgeWithCount(3).assertIsDisplayed()
     }
 
     @Test
@@ -347,7 +348,7 @@ class CatalogScreenTest {
         addButton("Bananas").performClick()
         addButton("Milk").performClick()
 
-        composeRule.onNodeWithText("3").assertIsDisplayed()
+        cartBadgeWithCount(3).assertIsDisplayed()
     }
 
     @Test
@@ -369,8 +370,10 @@ class CatalogScreenTest {
         repeat(2) { addButton("Bananas").performClick() }
         addButton("Milk").performClick()
 
-        composeRule.onNodeWithText("×2").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("2 of Bananas in the cart").assertIsDisplayed()
+        composeRule
+            .onNode(hasText("2") and hasContentDescription("2 of Bananas in the cart"))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("×2").assertDoesNotExist()
         composeRule.onNodeWithContentDescription("1 of Milk in the cart").assertIsDisplayed()
     }
 
@@ -388,7 +391,16 @@ class CatalogScreenTest {
         }
 
         composeRule.onNodeWithText("Retry").assertIsDisplayed()
-        composeRule.onNodeWithText("2").assertIsDisplayed()
+        cartBadgeWithCount(2).assertIsDisplayed()
+    }
+
+    private fun cartBadgeWithCount(count: Int): SemanticsNodeInteraction {
+        val itemLabel = if (count == 1) "item" else "items"
+        return composeRule.onNode(
+            hasText("View cart") and
+                hasText(count.toString()) and
+                hasStateDescription("$count $itemLabel in cart"),
+        )
     }
 
     private fun addButton(itemName: String): SemanticsNodeInteraction =
