@@ -30,12 +30,14 @@ class CatalogViewModelTest {
         sort: PriceSortOrder? = null,
         selectedCategoryIds: Set<String> = emptySet(),
         cartItemCount: Int = 0,
+        cartQuantities: Map<String, Int> = emptyMap(),
     ) = CatalogUiState.Content(
         items = items,
         sort = sort,
         categories = catalog.categories,
         selectedCategoryIds = selectedCategoryIds,
         cartItemCount = cartItemCount,
+        cartQuantities = cartQuantities,
     )
 
     @Test
@@ -249,18 +251,51 @@ class CatalogViewModelTest {
             assertEquals(contentOf(filterable, listOf(steak, milk, bananas)), awaitItem())
 
             viewModel.onAddToCart(bananas)
-            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 1), awaitItem())
+            assertEquals(
+                contentOf(
+                    filterable,
+                    listOf(steak, milk, bananas),
+                    cartItemCount = 1,
+                    cartQuantities = mapOf(bananas.id to 1),
+                ),
+                awaitItem(),
+            )
 
             viewModel.onAddToCart(bananas)
-            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 2), awaitItem())
+            assertEquals(
+                contentOf(
+                    filterable,
+                    listOf(steak, milk, bananas),
+                    cartItemCount = 2,
+                    cartQuantities = mapOf(bananas.id to 2),
+                ),
+                awaitItem(),
+            )
 
             viewModel.onAddToCart(bananas)
-            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 3), awaitItem())
+            assertEquals(
+                contentOf(
+                    filterable,
+                    listOf(steak, milk, bananas),
+                    cartItemCount = 3,
+                    cartQuantities = mapOf(bananas.id to 3),
+                ),
+                awaitItem(),
+            )
 
             // A fourth add of a second distinct item shows the count is a total of
-            // adds; a distinct-item count would read 2 here.
+            // adds; a distinct-item count would read 2 here. The per-item quantities
+            // keep each card's own number.
             viewModel.onAddToCart(milk)
-            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 4), awaitItem())
+            assertEquals(
+                contentOf(
+                    filterable,
+                    listOf(steak, milk, bananas),
+                    cartItemCount = 4,
+                    cartQuantities = mapOf(bananas.id to 3, milk.id to 1),
+                ),
+                awaitItem(),
+            )
         }
     }
 
@@ -280,7 +315,12 @@ class CatalogViewModelTest {
         // A configuration change recreates the UI, which collects the state again.
         viewModel.uiState.test {
             assertEquals(
-                contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 1),
+                contentOf(
+                    filterable,
+                    listOf(steak, milk, bananas),
+                    cartItemCount = 1,
+                    cartQuantities = mapOf(bananas.id to 1),
+                ),
                 awaitItem(),
             )
         }

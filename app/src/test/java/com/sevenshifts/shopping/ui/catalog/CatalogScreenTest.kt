@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
@@ -345,6 +346,30 @@ class CatalogScreenTest {
         addButton("Milk").performClick()
 
         composeRule.onNodeWithText("3").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a card shows no quantity until its item is added`() {
+        setContent(filterableCatalogViewModel())
+
+        addButton("Milk").performClick()
+
+        composeRule.onNodeWithContentDescription("1 of Milk in the cart").assertIsDisplayed()
+        composeRule
+            .onNode(hasContentDescription("of Bananas in the cart", substring = true))
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun `each card shows its own in-cart quantity beside the add control`() {
+        setContent(filterableCatalogViewModel())
+
+        repeat(2) { addButton("Bananas").performClick() }
+        addButton("Milk").performClick()
+
+        composeRule.onNodeWithText("×2").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("2 of Bananas in the cart").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("1 of Milk in the cart").assertIsDisplayed()
     }
 
     private fun addButton(itemName: String): SemanticsNodeInteraction =

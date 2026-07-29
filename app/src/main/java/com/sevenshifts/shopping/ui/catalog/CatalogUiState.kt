@@ -18,6 +18,8 @@ sealed interface CatalogUiState {
         val selectedCategoryIds: Set<String> = emptySet(),
         /** Total adds across the cart, so three of one item is 3; shown as the badge. */
         val cartItemCount: Int = 0,
+        /** How many of each item are in the cart, keyed by item id; absent means none. */
+        val cartQuantities: Map<String, Int> = emptyMap(),
     ) : CatalogUiState
 
     data object Error : CatalogUiState

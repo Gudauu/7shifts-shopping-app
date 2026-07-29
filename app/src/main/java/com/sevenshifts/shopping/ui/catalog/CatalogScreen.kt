@@ -1,5 +1,6 @@
 package com.sevenshifts.shopping.ui.catalog
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -21,8 +23,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
@@ -126,6 +129,7 @@ fun CatalogScreen(
                                     items = state.items,
                                     sort = state.sort,
                                     selectedCategoryIds = state.selectedCategoryIds,
+                                    cartQuantities = state.cartQuantities,
                                     onAddToCart = onAddToCart,
                                     modifier = Modifier.weight(1f),
                                 )
@@ -263,6 +267,7 @@ private fun FoodItemGrid(
     items: List<FoodItem>,
     sort: PriceSortOrder?,
     selectedCategoryIds: Set<String>,
+    cartQuantities: Map<String, Int>,
     onAddToCart: (FoodItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -286,13 +291,22 @@ private fun FoodItemGrid(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(items = items, key = { it.id }) { item ->
-            FoodItemCard(item = item, onAddToCart = onAddToCart)
+            FoodItemCard(
+                item = item,
+                quantityInCart = cartQuantities[item.id] ?: 0,
+                onAddToCart = onAddToCart,
+            )
         }
     }
 }
 
 @Composable
-private fun FoodItemCard(item: FoodItem, onAddToCart: (FoodItem) -> Unit, modifier: Modifier = Modifier) {
+private fun FoodItemCard(
+    item: FoodItem,
+    quantityInCart: Int,
+    onAddToCart: (FoodItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(modifier = modifier) {
         val imagePlaceholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant)
         AsyncImage(
@@ -335,18 +349,60 @@ private fun FoodItemCard(item: FoodItem, onAddToCart: (FoodItem) -> Unit, modifi
                     text = formatPrice(item.price),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                FilledTonalButton(
-                    onClick = { onAddToCart(item) },
-                    // Every card shows the same "Add" label, so the description names
-                    // the item for TalkBack instead of announcing thirty bare "Add"s.
-                    modifier = Modifier.semantics {
-                        contentDescription = "Add ${item.name} to the cart"
-                    },
-                ) {
-                    Text("Add")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (quantityInCart > 0) {
+                        Text(
+                            text = "×$quantityInCart",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            // "×2" would be read as "multiplication sign 2", and every
+                            // card shows the same shape, so TalkBack gets the item name.
+                            modifier = Modifier.semantics {
+                                contentDescription = "$quantityInCart of ${item.name} in the cart"
+                            },
+                        )
+                    }
+                    IconButton(
+                        onClick = { onAddToCart(item) },
+                        // An icon-only control needs a description, and it names the
+                        // item so TalkBack does not announce thirty identical buttons.
+                        modifier = Modifier.semantics {
+                            contentDescription = "Add ${item.name} to the cart"
+                        },
+                    ) {
+                        AddSign()
+                    }
                 }
             }
         }
+    }
+}
+
+/** Green 600: reads as "add" on both the light and the dark card surface. */
+private val AddSignGreen = Color(0xFF43A047)
+
+/**
+ * A green plus sign, drawn by hand because the pinned material3 no longer brings
+ * material-icons along and the icon set is not worth a dependency of its own.
+ */
+@Composable
+private fun AddSign(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val stroke = 2.5.dp.toPx()
+        drawLine(
+            color = AddSignGreen,
+            start = Offset(size.width / 2, 0f),
+            end = Offset(size.width / 2, size.height),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = AddSignGreen,
+            start = Offset(0f, size.height / 2),
+            end = Offset(size.width, size.height / 2),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round,
+        )
     }
 }
 
