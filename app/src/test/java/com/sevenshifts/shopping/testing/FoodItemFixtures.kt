@@ -8,7 +8,7 @@ fun foodItem(
     name: String = "Bananas",
     price: BigDecimal = BigDecimal("1.49"),
     categoryName: String? = "Produce",
-    imageUrl: String = "https://example.test/bananas.png",
+    imageUrl: String? = "https://example.test/bananas.png",
 ) = FoodItem(
     id = id,
     name = name,
