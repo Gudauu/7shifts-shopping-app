@@ -117,6 +117,13 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   brings material-icons along and an icon set is not worth a dependency of its own. The
   quantity and the plus sit together in a translucent light-green pill, so they read as
   one control rather than two stray glyphs; checked on the emulator in light and dark.
+- **The order total stays pinned below the scrolling rows** (Issue #6, emulator check).
+  The issue lists the rows and an order total but not where the total lives. The rows
+  scroll while the total sits under a divider at the bottom of the screen, so what the
+  order costs stays visible however long the cart grows. Checked on a phone-sized
+  emulator in light and dark, together with the empty state, a mixed cart's line and
+  order totals, and the cart surviving the activity recreation that the theme switch
+  forces.
 
 ## Purchase
 
