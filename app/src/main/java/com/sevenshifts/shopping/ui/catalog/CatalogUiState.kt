@@ -16,6 +16,8 @@ sealed interface CatalogUiState {
         val categories: List<FoodCategory> = emptyList(),
         /** Empty means no filter and every item shows. */
         val selectedCategoryIds: Set<String> = emptySet(),
+        /** Total adds across the cart, so three of one item is 3; shown as the badge. */
+        val cartItemCount: Int = 0,
     ) : CatalogUiState
 
     data object Error : CatalogUiState

@@ -48,6 +48,7 @@ fun ShoppingNavHost(
                 onRetry = catalogViewModel::retry,
                 onSortSelected = catalogViewModel::onSortSelected,
                 onCategoryToggled = catalogViewModel::onCategoryToggled,
+                onAddToCart = catalogViewModel::onAddToCart,
                 onViewCart = { navController.navigate(Cart) },
             )
         }

@@ -1,6 +1,7 @@
 package com.sevenshifts.shopping.ui.catalog
 
 import app.cash.turbine.test
+import com.sevenshifts.shopping.domain.Cart
 import com.sevenshifts.shopping.domain.Catalog
 import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
@@ -28,16 +29,18 @@ class CatalogViewModelTest {
         items: List<FoodItem>,
         sort: PriceSortOrder? = null,
         selectedCategoryIds: Set<String> = emptySet(),
+        cartItemCount: Int = 0,
     ) = CatalogUiState.Content(
         items = items,
         sort = sort,
         categories = catalog.categories,
         selectedCategoryIds = selectedCategoryIds,
+        cartItemCount = cartItemCount,
     )
 
     @Test
     fun `loading is replaced by content when the fetch succeeds`() = runTest {
-        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(loaded))))
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(loaded))), Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -49,6 +52,7 @@ class CatalogViewModelTest {
     fun `a failed fetch shows the error state and retry recovers`() = runTest {
         val viewModel = CatalogViewModel(
             FakeCatalogRepository(listOf(Result.failure(IOException("boom")), Result.success(loaded))),
+            Cart(),
         )
 
         viewModel.uiState.test {
@@ -65,7 +69,7 @@ class CatalogViewModelTest {
     @Test
     fun `a new collector reuses the loaded state instead of refetching`() = runTest {
         val repository = FakeCatalogRepository(listOf(Result.success(loaded)))
-        val viewModel = CatalogViewModel(repository)
+        val viewModel = CatalogViewModel(repository, Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -86,7 +90,7 @@ class CatalogViewModelTest {
 
     @Test
     fun `selecting a sort reorders the content and marks the sort active`() = runTest {
-        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(sortable))))
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(sortable))), Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -108,7 +112,7 @@ class CatalogViewModelTest {
 
     @Test
     fun `clearing the sort restores the API order`() = runTest {
-        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(sortable))))
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(sortable))), Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -128,7 +132,7 @@ class CatalogViewModelTest {
     @Test
     fun `the sort survives a new collector without refetching`() = runTest {
         val repository = FakeCatalogRepository(listOf(Result.success(sortable)))
-        val viewModel = CatalogViewModel(repository)
+        val viewModel = CatalogViewModel(repository, Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -160,7 +164,7 @@ class CatalogViewModelTest {
 
     @Test
     fun `selecting categories narrows the content to their union additively`() = runTest {
-        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))))
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))), Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -182,7 +186,7 @@ class CatalogViewModelTest {
 
     @Test
     fun `deselecting every category restores the full list`() = runTest {
-        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))))
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))), Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
@@ -207,7 +211,7 @@ class CatalogViewModelTest {
 
         // Each view model is created just before collecting, so its load completes while
         // this collector is watching rather than during the other block.
-        val sortThenFilter = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))))
+        val sortThenFilter = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))), Cart())
         sortThenFilter.uiState.test {
             awaitItem()
             awaitItem()
@@ -221,7 +225,7 @@ class CatalogViewModelTest {
             assertEquals(expected, awaitItem())
         }
 
-        val filterThenSort = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))))
+        val filterThenSort = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))), Cart())
         filterThenSort.uiState.test {
             awaitItem()
             awaitItem()
@@ -237,9 +241,57 @@ class CatalogViewModelTest {
     }
 
     @Test
+    fun `the cart count counts every add, not distinct items`() = runTest {
+        val viewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(filterable))), Cart())
+
+        viewModel.uiState.test {
+            assertEquals(CatalogUiState.Loading, awaitItem())
+            assertEquals(contentOf(filterable, listOf(steak, milk, bananas)), awaitItem())
+
+            viewModel.onAddToCart(bananas)
+            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 1), awaitItem())
+
+            viewModel.onAddToCart(bananas)
+            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 2), awaitItem())
+
+            viewModel.onAddToCart(bananas)
+            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 3), awaitItem())
+
+            // A fourth add of a second distinct item shows the count is a total of
+            // adds; a distinct-item count would read 2 here.
+            viewModel.onAddToCart(milk)
+            assertEquals(contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 4), awaitItem())
+        }
+    }
+
+    @Test
+    fun `the cart count survives a new collector without refetching`() = runTest {
+        val repository = FakeCatalogRepository(listOf(Result.success(filterable)))
+        val viewModel = CatalogViewModel(repository, Cart())
+
+        viewModel.uiState.test {
+            assertEquals(CatalogUiState.Loading, awaitItem())
+            awaitItem()
+
+            viewModel.onAddToCart(bananas)
+            awaitItem()
+        }
+
+        // A configuration change recreates the UI, which collects the state again.
+        viewModel.uiState.test {
+            assertEquals(
+                contentOf(filterable, listOf(steak, milk, bananas), cartItemCount = 1),
+                awaitItem(),
+            )
+        }
+
+        assertEquals(1, repository.loadCount)
+    }
+
+    @Test
     fun `the selection survives a new collector without refetching`() = runTest {
         val repository = FakeCatalogRepository(listOf(Result.success(filterable)))
-        val viewModel = CatalogViewModel(repository)
+        val viewModel = CatalogViewModel(repository, Cart())
 
         viewModel.uiState.test {
             assertEquals(CatalogUiState.Loading, awaitItem())
