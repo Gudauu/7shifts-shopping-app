@@ -56,6 +56,33 @@ class CartViewModelTest {
         }
     }
 
+    @Test
+    fun `decreasing through the view model updates the line quantity and order total`() = runTest {
+        val cart = Cart()
+        repeat(2) { cart.add(bananas) }
+        val viewModel = CartViewModel(cart)
+
+        viewModel.uiState.test {
+            assertEquals(
+                CartUiState(
+                    lines = listOf(CartLine(bananas, quantity = 2)),
+                    orderTotal = BigDecimal("2.98"),
+                ),
+                awaitItem(),
+            )
+
+            viewModel.onDecrease(bananas.id)
+
+            assertEquals(
+                CartUiState(
+                    lines = listOf(CartLine(bananas, quantity = 1)),
+                    orderTotal = BigDecimal("1.49"),
+                ),
+                awaitItem(),
+            )
+        }
+    }
+
     // Arriving on the cart screen constructs the view model after the shopper has been
     // adding items on the catalog; the first emission must already hold them.
     @Test
