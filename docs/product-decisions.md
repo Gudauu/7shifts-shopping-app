@@ -63,6 +63,11 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   therefore returns the category list alongside the items, and each item carries its
   resolved category (uuid and name) instead of a bare name. Matching on the uuid rather
   than the display name keeps the filter correct if two categories ever share a name.
+- **The chip row signals its overflow with an edge fade** (Issue #4, review). The
+  category chips scroll sideways, but a row that ends cleanly at the screen edge reads as
+  the complete list, so the off-screen categories were undiscoverable. The row now fades
+  into the background on any edge with more content beyond it, and the fade disappears
+  once that end is reached.
 - **Changing the filter presents the top of the new list** (Issue #4). The Issue #3
   decision that applying a sort scrolls back to the top applies equally to toggling a
   category chip: both replace the list, and the point of narrowing it is to see its

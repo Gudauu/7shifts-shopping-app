@@ -1,5 +1,6 @@
 package com.sevenshifts.shopping.ui.catalog
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -182,10 +188,14 @@ private fun CategoryFilterRow(
     modifier: Modifier = Modifier,
 ) {
     // Chips keep the categories endpoint's order. The row scrolls sideways rather than
-    // wrapping so the grid keeps its vertical space on narrow screens.
+    // wrapping so the grid keeps its vertical space on narrow screens, and an edge fade
+    // signals the overflow, since a cleanly ending row reads as the whole list.
+    val scrollState = rememberScrollState()
+    val background = MaterialTheme.colorScheme.background
     Row(
         modifier = modifier
-            .horizontalScroll(rememberScrollState())
+            .fadedOverflowEdges(scrollState, background)
+            .horizontalScroll(scrollState)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -196,6 +206,41 @@ private fun CategoryFilterRow(
                 label = { Text(category.name) },
             )
         }
+    }
+}
+
+private val OverflowFadeWidth = 24.dp
+
+/**
+ * Fades an edge into [background] while more content lies beyond it, so a scrollable row
+ * looks cut off rather than complete. Placed before `horizontalScroll` in the chain, it
+ * draws in the fixed viewport instead of moving with the content, and reading the
+ * snapshot-backed [ScrollState.canScrollForward] inside the draw phase redraws the fades
+ * as the user scrolls, with none once the corresponding end is reached.
+ */
+private fun Modifier.fadedOverflowEdges(scrollState: ScrollState, background: Color): Modifier = drawWithContent {
+    drawContent()
+    val fadeWidth = OverflowFadeWidth.toPx()
+    if (scrollState.canScrollBackward) {
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colors = listOf(background, Color.Transparent),
+                startX = 0f,
+                endX = fadeWidth,
+            ),
+            size = Size(fadeWidth, size.height),
+        )
+    }
+    if (scrollState.canScrollForward) {
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colors = listOf(Color.Transparent, background),
+                startX = size.width - fadeWidth,
+                endX = size.width,
+            ),
+            topLeft = Offset(size.width - fadeWidth, 0f),
+            size = Size(fadeWidth, size.height),
+        )
     }
 }
 
