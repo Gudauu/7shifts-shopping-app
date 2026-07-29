@@ -39,28 +39,30 @@ class CatalogViewModel @Inject constructor(private val repository: CatalogReposi
 
     val uiState: StateFlow<CatalogUiState> =
         combine(loadState, sort, selectedCategoryIds, cart.lines) { load, sort, selected, cartLines ->
-            when (load) {
-                LoadState.Loading -> CatalogUiState.Loading
+            CatalogUiState(
+                catalog = when (load) {
+                    LoadState.Loading -> CatalogState.Loading
 
-                LoadState.Failed -> CatalogUiState.Error
+                    LoadState.Failed -> CatalogState.Error
 
-                is LoadState.Loaded -> {
-                    // Filtering preserves relative order, and always sorting from the
-                    // API-ordered list keeps the sort stable: items with equal prices hold
-                    // their relative API order in both directions. Neither control resets
-                    // the other; both derive from the same untouched catalog.
-                    val filtered = load.catalog.items.filteredByCategories(selected)
-                    CatalogUiState.Content(
-                        items = if (sort == null) filtered else filtered.sortedByPrice(sort),
-                        sort = sort,
-                        categories = load.catalog.categories,
-                        selectedCategoryIds = selected,
-                        cartItemCount = cartLines.totalQuantity,
-                        cartQuantities = cartLines.associate { it.item.id to it.quantity },
-                    )
-                }
-            }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, CatalogUiState.Loading)
+                    is LoadState.Loaded -> {
+                        // Filtering preserves relative order, and always sorting from the
+                        // API-ordered list keeps the sort stable: items with equal prices hold
+                        // their relative API order in both directions. Neither control resets
+                        // the other; both derive from the same untouched catalog.
+                        val filtered = load.catalog.items.filteredByCategories(selected)
+                        CatalogState.Content(
+                            items = if (sort == null) filtered else filtered.sortedByPrice(sort),
+                            sort = sort,
+                            categories = load.catalog.categories,
+                            selectedCategoryIds = selected,
+                        )
+                    }
+                },
+                cartItemCount = cartLines.totalQuantity,
+                cartQuantities = cartLines.associate { it.item.id to it.quantity },
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, CatalogUiState())
 
     private var loadJob: Job? = null
 

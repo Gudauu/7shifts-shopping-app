@@ -15,11 +15,15 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.domain.Cart
+import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
 import com.sevenshifts.shopping.testing.catalog
 import com.sevenshifts.shopping.testing.foodCategory
@@ -44,13 +48,11 @@ class CatalogScreenTest {
     fun `items render with name, price, and category name`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(
-                    listOf(
-                        foodItem(
-                            name = "Bananas",
-                            price = BigDecimal("1.49"),
-                            category = foodCategory(name = "Produce"),
-                        ),
+                state = catalogContent(
+                    foodItem(
+                        name = "Bananas",
+                        price = BigDecimal("1.49"),
+                        category = foodCategory(name = "Produce"),
                     ),
                 ),
                 onRetry = {},
@@ -70,7 +72,7 @@ class CatalogScreenTest {
     fun `prices always display two decimals`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(listOf(foodItem(name = "Milk", price = BigDecimal("4.9")))),
+                state = catalogContent(foodItem(name = "Milk", price = BigDecimal("4.9"))),
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
@@ -86,7 +88,7 @@ class CatalogScreenTest {
     fun `an item without an image still renders`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(listOf(foodItem(name = "Plain oats", imageUrl = null))),
+                state = catalogContent(foodItem(name = "Plain oats", imageUrl = null)),
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
@@ -102,7 +104,7 @@ class CatalogScreenTest {
     fun `an item without a category still renders`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(listOf(foodItem(name = "Mystery snack", category = null))),
+                state = catalogContent(foodItem(name = "Mystery snack", category = null)),
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
@@ -118,7 +120,7 @@ class CatalogScreenTest {
     fun `loading shows a spinner`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Loading,
+                state = CatalogUiState(),
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
@@ -136,7 +138,7 @@ class CatalogScreenTest {
     fun `an empty catalog shows the empty state`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(emptyList()),
+                state = catalogContent(),
                 onRetry = {},
                 onSortSelected = {},
                 onCategoryToggled = {},
@@ -372,6 +374,23 @@ class CatalogScreenTest {
         composeRule.onNodeWithContentDescription("1 of Milk in the cart").assertIsDisplayed()
     }
 
+    @Test
+    fun `the badge stays visible while the catalog is in the error state`() {
+        composeRule.setContent {
+            CatalogScreen(
+                state = CatalogUiState(catalog = CatalogState.Error, cartItemCount = 2),
+                onRetry = {},
+                onSortSelected = {},
+                onCategoryToggled = {},
+                onAddToCart = {},
+                onViewCart = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Retry").assertIsDisplayed()
+        composeRule.onNodeWithText("2").assertIsDisplayed()
+    }
+
     private fun addButton(itemName: String): SemanticsNodeInteraction =
         composeRule.onNodeWithContentDescription("Add $itemName to the cart")
 
@@ -422,6 +441,8 @@ class CatalogScreenTest {
             Cart(),
         )
     }
+
+    private fun catalogContent(vararg items: FoodItem) = CatalogUiState(catalog = CatalogState.Content(items.toList()))
 
     private fun categoryChip(name: String): SemanticsNodeInteraction =
         composeRule.onNode(hasText(name) and isSelectable())
