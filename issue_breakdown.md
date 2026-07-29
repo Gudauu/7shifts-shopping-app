@@ -434,7 +434,8 @@ As a shopper, I want to buy everything in my cart, so I can complete my order.
 
 **Test plan**
 - Document inspection: request and response examples are internally consistent and cover
-  success, validation failure, unavailable items, and idempotent replay.
+  success, validation failure, unavailable items, idempotent replay, processing recovery
+  to completed or failed, and the correct key choice after a terminal failure.
 - Unit: purchase succeeds, cart empties; purchase fails, cart is preserved.
 - Unit: a second purchase call while one is in flight is ignored.
 - Robolectric: the button is disabled when the cart is empty, and the cart shows its
