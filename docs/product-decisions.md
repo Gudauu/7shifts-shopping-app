@@ -78,11 +78,14 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issues #5–#7 assumptions. -->
 
-- **The badge disappears at zero rather than showing 0** (Issue #5). The initial
-  assumptions cover what the badge counts but not what an empty cart looks like. A
-  permanently visible "0" reads as something needing attention, so the "View cart"
-  action shows no badge until the first add, and the badge itself is the confirmation
-  that an add landed.
+- **The badge disappears at zero rather than showing 0** (Issue #5, emulator check).
+  The initial assumptions cover what the badge counts but not what an empty cart looks
+  like. A permanently visible "0" reads as something needing attention, so the "View
+  cart" action shows no badge until the first add, and the badge itself is the
+  confirmation that an add landed. The standalone badge beside the button text, rather
+  than a `BadgedBox` overlay that the button's clipping could cut, renders as an intact
+  pill on a phone-sized emulator; Robolectric resolves the badge text on the merged
+  button node, so that look is emulator evidence, not test evidence.
 - **The cart stores lines of item and quantity, keyed by uuid** (Issue #5). The badge
   only needs a total, but re-adding an item has to register somewhere, and a line with a
   quantity is the direct representation of "the same item can be added repeatedly". It
