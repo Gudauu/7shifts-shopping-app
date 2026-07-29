@@ -8,11 +8,13 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
@@ -254,6 +256,51 @@ class CatalogScreenTest {
         composeRule.onNodeWithText("Price: low to high").assertIsSelected()
     }
 
+    @Test
+    fun `category chips render in the categories endpoint order`() {
+        setContent(filterableCatalogViewModel())
+
+        // Deliberately neither the items' order (Meat, Dairy, Produce) nor alphabetical,
+        // so a rendering that re-sorts or reverses the endpoint's order fails.
+        assertChipOrder("Produce", "Meat", "Dairy", "Frozen")
+    }
+
+    // From the top of the list a filter change lands at the top regardless, because the
+    // grid falls back to the first index when the anchor card leaves the list. The test
+    // therefore scrolls to the bottom first, past every Produce item, so only the explicit
+    // scroll-to-top can bring Bananas back into the short viewport.
+    @Test
+    @Config(qualifiers = "+h800dp")
+    fun `changing the filter scrolls the list back to the top`() {
+        val produce = foodCategory(id = "cat-produce", name = "Produce")
+        val meat = foodCategory(id = "cat-meat", name = "Meat")
+        val dairy = foodCategory(id = "cat-dairy", name = "Dairy")
+        val viewModel = CatalogViewModel(
+            FakeCatalogRepository(
+                listOf(
+                    Result.success(
+                        catalog(
+                            items = listOf(
+                                foodItem(id = "bananas", name = "Bananas", category = produce),
+                                foodItem(id = "apples", name = "Apples", category = produce),
+                                foodItem(id = "cherries", name = "Cherries", category = produce),
+                                foodItem(id = "steak", name = "Steak", category = meat),
+                                foodItem(id = "milk", name = "Milk", category = dairy),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        setContent(viewModel)
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Milk"))
+        composeRule.onNodeWithText("Bananas").assertDoesNotExist()
+
+        categoryChip("Produce").performClick()
+
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+    }
+
     private fun setContent(viewModel: CatalogViewModel) {
         composeRule.setContent {
             val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -308,6 +355,14 @@ class CatalogScreenTest {
         assertTrue(
             "Expected top-to-bottom order ${names.toList()}, but their tops were $tops",
             tops.zipWithNext().all { (above, below) -> above < below },
+        )
+    }
+
+    private fun assertChipOrder(vararg names: String) {
+        val lefts = names.map { categoryChip(it).getBoundsInRoot().left }
+        assertTrue(
+            "Expected left-to-right order ${names.toList()}, but their left edges were $lefts",
+            lefts.zipWithNext().all { (left, right) -> left < right },
         )
     }
 }
