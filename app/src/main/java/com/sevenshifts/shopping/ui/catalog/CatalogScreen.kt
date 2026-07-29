@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -86,7 +87,13 @@ fun CatalogScreen(
                                 // reads as an alert; the count is neutral information.
                                 containerColor = CartBadgeBlue,
                                 contentColor = Color.White,
-                                modifier = Modifier.padding(start = 6.dp),
+                                modifier = Modifier
+                                    .padding(start = 6.dp)
+                                    .semantics {
+                                        // The button merges this state with "View cart",
+                                        // keeping the total distinct from bare per-card counts.
+                                        stateDescription = cartCountDescription(state.cartItemCount)
+                                    },
                             ) {
                                 Text(state.cartItemCount.toString())
                             }
@@ -360,8 +367,8 @@ private fun FoodItemCard(
                     // large-font-scale layout is part of the manual emulator check.
                     modifier = Modifier.weight(1f),
                 )
-                // The pill groups the quantity with the control that changes it, so
-                // "×2 +" reads as one unit rather than two stray glyphs on the card.
+                // The pill groups the plain quantity with the control that changes it,
+                // matching the cart's count-and-action pattern.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.background(
@@ -371,11 +378,11 @@ private fun FoodItemCard(
                 ) {
                     if (quantityInCart > 0) {
                         Text(
-                            text = "×$quantityInCart",
+                            text = quantityInCart.toString(),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            // "×2" would be read as "multiplication sign 2", and every
-                            // card shows the same shape, so TalkBack gets the item name.
+                            // Every card shows a number in this position, so TalkBack
+                            // gets the item name as well as the visible count.
                             modifier = Modifier
                                 .padding(start = 12.dp)
                                 .semantics {
@@ -397,6 +404,11 @@ private fun FoodItemCard(
             }
         }
     }
+}
+
+private fun cartCountDescription(count: Int): String {
+    val itemLabel = if (count == 1) "item" else "items"
+    return "$count $itemLabel in cart"
 }
 
 /** Green 600: reads as "add" on both the light and the dark card surface. */
