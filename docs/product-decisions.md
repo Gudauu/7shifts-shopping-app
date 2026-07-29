@@ -15,6 +15,13 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issue #2 assumptions. -->
 
+- **Catalog state is activity-scoped, not destination-scoped** (Issue #2). The catalog
+  view model is created once per activity and passed into the nav host, rather than by a
+  `hiltViewModel()` call inside the catalog destination. Beyond the required
+  configuration-change survival, this means navigating to the cart and back never
+  refetches, and the Robolectric harness can drive the nav host with a fake repository
+  without any Hilt test infrastructure, which would otherwise need a new test dependency.
+
 ## Sort
 
 <!-- New decisions or deviations from Issue #3 assumptions. -->
