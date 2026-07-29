@@ -88,6 +88,22 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   quantity is the direct representation of "the same item can be added repeatedly". It
   also preserves first-added order, which issue #6 assumes for the cart rows, without
   the cart screen having to aggregate raw adds itself.
+- **The cart badge is screen-level state, not catalog content state** (Issue #5,
+  review). The badge count sits beside the catalog section in the UI state rather than
+  inside the loaded content, so a reload cannot blank a non-empty badge while the list
+  is away. No reload path exists after the first success today, but pull-to-refresh or
+  a post-purchase refresh in #8 must not flash the cart to zero mid-load.
+- **Cart lines snapshot the item at add time** (Issue #5, review). A line keeps the
+  `FoodItem` it was added with, price included. Within a session the catalog is fetched
+  exactly once, so a line cannot diverge from the catalog today, and the #8 contract
+  makes server-side pricing authoritative at purchase, so the snapshot is display data
+  rather than a price promise. Revisit if a catalog reload path ever arrives.
+- **Large-font-scale layout is emulator-checked, not Robolectric-checked** (Issue #5,
+  review). The card's price takes layout weight so an enlarged font wraps the price
+  rather than pushing the add control off the card. Robolectric cannot regress-test
+  this: its text measures around a pixel per character regardless of font scale, so no
+  text can ever crowd the row on the JVM. The check belongs to the manual emulator pass
+  alongside the badge's visual placement.
 - **Each card shows its own in-cart quantity next to a green add sign** (Issue #5,
   review). The badge answers "how much in total", but while browsing the useful question
   is "how many of this one do I already have", so a card shows ×N beside its add control

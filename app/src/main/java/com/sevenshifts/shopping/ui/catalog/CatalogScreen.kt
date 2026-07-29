@@ -74,14 +74,14 @@ fun CatalogScreen(
             TopAppBar(
                 title = { Text("Food items") },
                 actions = {
-                    val cartItemCount = (state as? CatalogUiState.Content)?.cartItemCount ?: 0
                     TextButton(onClick = onViewCart) {
                         Text("View cart")
                         // An empty cart shows no badge at all; a permanent "0" would
-                        // read as something needing attention.
-                        if (cartItemCount > 0) {
+                        // read as something needing attention. The count lives beside
+                        // the catalog section, so it stays through loading and errors.
+                        if (state.cartItemCount > 0) {
                             Badge(modifier = Modifier.padding(start = 6.dp)) {
-                                Text(cartItemCount.toString())
+                                Text(state.cartItemCount.toString())
                             }
                         }
                     }
@@ -94,28 +94,28 @@ fun CatalogScreen(
                 .fillMaxSize()
                 .padding(contentPadding),
         ) {
-            when (state) {
-                CatalogUiState.Loading ->
+            when (val catalog = state.catalog) {
+                CatalogState.Loading ->
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                CatalogUiState.Error ->
+                CatalogState.Error ->
                     ErrorContent(onRetry = onRetry, modifier = Modifier.align(Alignment.Center))
 
-                is CatalogUiState.Content ->
-                    if (state.items.isEmpty() && state.selectedCategoryIds.isEmpty()) {
+                is CatalogState.Content ->
+                    if (catalog.items.isEmpty() && catalog.selectedCategoryIds.isEmpty()) {
                         Text(
                             text = "No food items to show",
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            PriceSortRow(sort = state.sort, onSortSelected = onSortSelected)
+                            PriceSortRow(sort = catalog.sort, onSortSelected = onSortSelected)
                             CategoryFilterRow(
-                                categories = state.categories,
-                                selectedCategoryIds = state.selectedCategoryIds,
+                                categories = catalog.categories,
+                                selectedCategoryIds = catalog.selectedCategoryIds,
                                 onCategoryToggled = onCategoryToggled,
                             )
-                            if (state.items.isEmpty()) {
+                            if (catalog.items.isEmpty()) {
                                 // Only an active filter can empty the list here, so the
                                 // chips stay visible for the user to widen the selection.
                                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -126,9 +126,9 @@ fun CatalogScreen(
                                 }
                             } else {
                                 FoodItemGrid(
-                                    items = state.items,
-                                    sort = state.sort,
-                                    selectedCategoryIds = state.selectedCategoryIds,
+                                    items = catalog.items,
+                                    sort = catalog.sort,
+                                    selectedCategoryIds = catalog.selectedCategoryIds,
                                     cartQuantities = state.cartQuantities,
                                     onAddToCart = onAddToCart,
                                     modifier = Modifier.weight(1f),
@@ -342,12 +342,16 @@ private fun FoodItemCard(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = formatPrice(item.price),
                     style = MaterialTheme.typography.titleSmall,
+                    // The weight lets a large font scale wrap the price instead of
+                    // squeezing the add control toward zero width. Robolectric cannot
+                    // exercise this (its text measures ~1px per character), so the
+                    // large-font-scale layout is part of the manual emulator check.
+                    modifier = Modifier.weight(1f),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (quantityInCart > 0) {
