@@ -1,5 +1,6 @@
 package com.sevenshifts.shopping.domain
 
+import java.math.BigDecimal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,6 +12,17 @@ data class CartLine(val item: FoodItem, val quantity: Int)
 /** Every add counts, so three of one item is 3 rather than 1. */
 val List<CartLine>.totalQuantity: Int
     get() = sumOf { it.quantity }
+
+/**
+ * Unit price times quantity, exact and unrounded. Rounding to cents happens once, at
+ * display time, because rounding each line before summing would let the total drift.
+ */
+val CartLine.lineTotal: BigDecimal
+    get() = item.price * quantity.toBigDecimal()
+
+/** The sum of the exact line totals; `0` for an empty cart. Rounded only at display. */
+val List<CartLine>.orderTotal: BigDecimal
+    get() = fold(BigDecimal.ZERO) { total, line -> total + line.lineTotal }
 
 /**
  * The shopper's cart. In memory only, by design: the requirements describe no
