@@ -54,6 +54,41 @@ class CartTest {
         assertEquals(4, cart.lines.value.totalQuantity)
     }
 
+    @Test
+    fun `decreasing a line with multiple units removes one unit and updates every total`() {
+        val cart = Cart()
+        repeat(3) { cart.add(bananas) }
+        cart.add(milk)
+
+        cart.decrease(bananas.id)
+
+        assertEquals(
+            listOf(CartLine(bananas, quantity = 2), CartLine(milk, quantity = 1)),
+            cart.lines.value,
+        )
+        assertEquals(3, cart.lines.value.totalQuantity)
+        assertEquals(BigDecimal("7.88"), cart.lines.value.orderTotal)
+    }
+
+    @Test
+    fun `decreasing a line at one removes it and the final cart unit leaves the cart empty`() {
+        val cart = Cart()
+        cart.add(bananas)
+        cart.add(milk)
+
+        cart.decrease(bananas.id)
+
+        assertEquals(listOf(CartLine(milk, quantity = 1)), cart.lines.value)
+        assertEquals(1, cart.lines.value.totalQuantity)
+        assertEquals(BigDecimal("4.90"), cart.lines.value.orderTotal)
+
+        cart.decrease(milk.id)
+
+        assertEquals(emptyList<CartLine>(), cart.lines.value)
+        assertEquals(0, cart.lines.value.totalQuantity)
+        assertEquals(BigDecimal.ZERO, cart.lines.value.orderTotal)
+    }
+
     // BigDecimal.equals distinguishes 4.47 from 4.470, so these assert the exact
     // unrounded amount, not a rounded rendering of it.
     @Test

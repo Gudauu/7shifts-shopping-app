@@ -73,6 +73,21 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithText("1").assertIsDisplayed()
     }
 
+    @Test
+    @Config(qualifiers = "w320dp-h2000dp")
+    fun `decreasing in the cart immediately lowers its total and the catalog badge`() {
+        setContent()
+        repeat(2) { composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick() }
+        composeRule.onNodeWithText("View cart").performClick()
+
+        composeRule.onNodeWithContentDescription("Decrease Bananas quantity").performClick()
+
+        composeRule.onNodeWithText("$1.49 / $1.49").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Remove Bananas from the cart").assertIsDisplayed()
+        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithText("1").assertIsDisplayed()
+    }
+
     // End to end across the two screens: adds made on the catalog are what the cart
     // screen lists, because both view models observe the same cart.
     @Test
@@ -83,7 +98,8 @@ class ShoppingNavHostTest {
 
         composeRule.onNodeWithText("View cart").performClick()
 
-        composeRule.onNodeWithText("2 × $1.49").assertIsDisplayed()
+        composeRule.onNodeWithText("$1.49 / $2.98").assertIsDisplayed()
+        composeRule.onNodeWithText("2").assertIsDisplayed()
         composeRule.onNodeWithText("Total").assertIsDisplayed()
     }
 }

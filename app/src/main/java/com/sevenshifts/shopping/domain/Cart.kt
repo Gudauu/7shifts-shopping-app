@@ -52,4 +52,21 @@ class Cart {
             }
         }
     }
+
+    /**
+     * Removes one unit of the item identified by [itemId]. A quantity of one removes the
+     * line; an id no longer in the cart is a no-op, so a repeated tap cannot remove a
+     * different item while the UI catches up.
+     */
+    fun decrease(itemId: String) {
+        _lines.update { lines ->
+            lines.mapNotNull { line ->
+                if (line.item.id != itemId) {
+                    line
+                } else {
+                    line.copy(quantity = line.quantity - 1).takeIf { it.quantity > 0 }
+                }
+            }
+        }
+    }
 }

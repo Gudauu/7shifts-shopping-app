@@ -117,6 +117,14 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   brings material-icons along and an icon set is not worth a dependency of its own. The
   quantity and the plus sit together in a translucent light-green pill, so they read as
   one control rather than two stray glyphs; checked on the emulator in light and dark.
+- **Cart quantity controls group the count with the decrease action** (Issue #7,
+  follow-up; emulator check). Moving quantity out of the unit-price label makes the
+  adjustment easier to scan. The cart uses a soft coral decrease pill, and swaps the
+  minus for an empty-outline bin at quantity 1 to signal that the next tap removes the
+  row. The softer palette won an emulator comparison over vivid red and muted berry:
+  decreasing a quantity is routine, so it should not read as a high-severity alert. Unit
+  and line prices share the lower row in `unit / total` order; checked in light and dark
+  themes and at large font scale.
 - **The order total stays pinned below the scrolling rows** (Issue #6, emulator check).
   The issue lists the rows and an order total but not where the total lives. The rows
   scroll while the total sits under a divider at the bottom of the screen, so what the

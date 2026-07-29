@@ -59,6 +59,7 @@ fun ShoppingNavHost(
             CartScreen(
                 state = cartState,
                 onBack = { navController.popBackStack() },
+                onDecrease = cartViewModel::onDecrease,
             )
         }
     }

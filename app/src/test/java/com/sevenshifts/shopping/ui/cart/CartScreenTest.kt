@@ -6,7 +6,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.domain.Cart
@@ -45,8 +47,11 @@ class CartScreenTest {
         setContent(cart)
 
         composeRule.onAllNodesWithText("Bananas").assertCountEquals(1)
-        composeRule.onNodeWithText("2 × $1.49").assertIsDisplayed()
-        composeRule.onAllNodesWithText("$2.98").assertCountEquals(2)
+        composeRule.onNodeWithText("$1.49 / $2.98").assertIsDisplayed()
+        composeRule.onNodeWithText("2").assertIsDisplayed()
+        composeRule.onNodeWithText("×", substring = true).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Decrease Bananas quantity").assertIsDisplayed()
+        composeRule.onAllNodesWithText("$2.98").assertCountEquals(1)
     }
 
     @Test
@@ -57,9 +62,8 @@ class CartScreenTest {
 
         setContent(cart)
 
-        composeRule.onNodeWithText("$2.98").assertIsDisplayed()
-        composeRule.onNodeWithText("1 × $4.90").assertIsDisplayed()
-        composeRule.onNodeWithText("$4.90").assertIsDisplayed()
+        composeRule.onNodeWithText("$1.49 / $2.98").assertIsDisplayed()
+        composeRule.onNodeWithText("$4.90 / $4.90").assertIsDisplayed()
         composeRule.onNodeWithText("Total").assertIsDisplayed()
         composeRule.onNodeWithText("$7.88").assertIsDisplayed()
     }
@@ -84,7 +88,27 @@ class CartScreenTest {
         setContent(cart)
 
         composeRule.onNodeWithText("Plain oats").assertIsDisplayed()
-        composeRule.onNodeWithText("1 × $3.25").assertIsDisplayed()
+        composeRule.onNodeWithText("$3.25 / $3.25").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Remove Plain oats from the cart").assertIsDisplayed()
+    }
+
+    @Test
+    fun `tapping decrease updates quantities and totals then removes the final unit`() {
+        val cart = Cart()
+        repeat(2) { cart.add(bananas) }
+        setContent(cart)
+
+        composeRule.onNodeWithContentDescription("Decrease Bananas quantity").performClick()
+
+        composeRule.onNodeWithText("1").assertIsDisplayed()
+        composeRule.onNodeWithText("$1.49 / $1.49").assertIsDisplayed()
+        composeRule.onAllNodesWithText("$1.49").assertCountEquals(1)
+        composeRule.onNodeWithContentDescription("Decrease Bananas quantity").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Remove Bananas from the cart").performClick()
+
+        composeRule.onNodeWithText("Your cart is empty").assertIsDisplayed()
+        composeRule.onNodeWithText("Bananas").assertDoesNotExist()
+        composeRule.onNodeWithText("Total").assertDoesNotExist()
     }
 
     // The fixture price drops the trailing zero, so this fails if the amount is ever
@@ -96,15 +120,15 @@ class CartScreenTest {
 
         setContent(cart)
 
-        composeRule.onNodeWithText("1 × $2.50").assertIsDisplayed()
-        composeRule.onAllNodesWithText("$2.50").assertCountEquals(2)
+        composeRule.onNodeWithText("$2.50 / $2.50").assertIsDisplayed()
+        composeRule.onAllNodesWithText("$2.50").assertCountEquals(1)
     }
 
     private fun setContent(cart: Cart) {
         val viewModel = CartViewModel(cart)
         composeRule.setContent {
             val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CartScreen(state = state, onBack = {})
+            CartScreen(state = state, onBack = {}, onDecrease = viewModel::onDecrease)
         }
     }
 
