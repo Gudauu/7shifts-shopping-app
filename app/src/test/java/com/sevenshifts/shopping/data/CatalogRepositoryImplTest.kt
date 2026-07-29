@@ -1,43 +1,48 @@
 package com.sevenshifts.shopping.data
 
-import com.sevenshifts.shopping.data.network.FoodItemCategoryDto
-import com.sevenshifts.shopping.data.network.FoodItemDto
 import com.sevenshifts.shopping.data.network.ShoppingApi
+import com.sevenshifts.shopping.data.network.shoppingJson
 import com.sevenshifts.shopping.domain.FoodItem
 import java.io.IOException
 import java.math.BigDecimal
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CatalogRepositoryImplTest {
-    private class FakeShoppingApi(
-        private val items: () -> List<FoodItemDto>,
-        private val categories: () -> List<FoodItemCategoryDto>,
-    ) : ShoppingApi {
-        override suspend fun getFoodItems(): List<FoodItemDto> = items()
+    private class FakeShoppingApi(private val items: () -> JsonArray, private val categories: () -> JsonArray) :
+        ShoppingApi {
+        override suspend fun getFoodItems(): JsonArray = items()
 
-        override suspend fun getFoodItemCategories(): List<FoodItemCategoryDto> = categories()
+        override suspend fun getFoodItemCategories(): JsonArray = categories()
     }
+
+    private fun jsonArrayOf(raw: String): JsonArray = shoppingJson.parseToJsonElement(raw).jsonArray
 
     @Test
     fun `a successful load returns items joined to their categories`() = runTest {
         val repository = CatalogRepositoryImpl(
             FakeShoppingApi(
                 items = {
-                    listOf(
-                        FoodItemDto(
-                            uuid = "item-1",
-                            name = "Bananas",
-                            price = BigDecimal("1.49"),
-                            categoryUuid = "cat-produce",
-                            imageUrl = "https://example.test/bananas.png",
-                        ),
+                    jsonArrayOf(
+                        """
+                        [
+                          {
+                            "uuid": "item-1",
+                            "name": "Bananas",
+                            "price": 1.49,
+                            "category_uuid": "cat-produce",
+                            "image_url": "https://example.test/bananas.png"
+                          }
+                        ]
+                        """.trimIndent(),
                     )
                 },
-                categories = { listOf(FoodItemCategoryDto(uuid = "cat-produce", name = "Produce")) },
+                categories = { jsonArrayOf("""[{"uuid": "cat-produce", "name": "Produce"}]""") },
             ),
         )
 
@@ -58,9 +63,23 @@ class CatalogRepositoryImplTest {
     }
 
     @Test
+    fun `a malformed element costs only itself never the catalog`() = runTest {
+        val repository = CatalogRepositoryImpl(
+            FakeShoppingApi(
+                items = { jsonArrayOf("""[{"uuid": "broken"}, {"uuid": "item-1", "name": "Milk", "price": 4.99}]""") },
+                categories = { JsonArray(emptyList()) },
+            ),
+        )
+
+        val result = repository.loadCatalog()
+
+        assertEquals(listOf("item-1"), result.getOrThrow().map { it.id })
+    }
+
+    @Test
     fun `a failing endpoint becomes a failure result instead of a thrown exception`() = runTest {
         val repository = CatalogRepositoryImpl(
-            FakeShoppingApi(items = { throw IOException("boom") }, categories = { emptyList() }),
+            FakeShoppingApi(items = { throw IOException("boom") }, categories = { JsonArray(emptyList()) }),
         )
 
         val result = repository.loadCatalog()
@@ -77,7 +96,7 @@ class CatalogRepositoryImplTest {
         val repository = CatalogRepositoryImpl(
             FakeShoppingApi(
                 items = { throw CancellationException("cancelled") },
-                categories = { emptyList() },
+                categories = { JsonArray(emptyList()) },
             ),
         )
 

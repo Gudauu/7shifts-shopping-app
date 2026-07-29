@@ -5,6 +5,7 @@ import com.sevenshifts.shopping.data.network.FoodItemDto
 import java.math.BigDecimal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FoodItemMapperTest {
@@ -57,6 +58,72 @@ class FoodItemMapperTest {
         )
 
         assertEquals(1, items.size)
+        assertNull(items.single().categoryName)
+    }
+
+    @Test
+    fun `an item with a blank uuid is dropped`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(uuid = " ")),
+            categories = listOf(produce),
+        )
+
+        assertTrue(items.isEmpty())
+    }
+
+    @Test
+    fun `an item with a blank name is dropped`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(uuid = "item-1", name = " "), itemDto(uuid = "item-2", name = "Milk")),
+            categories = listOf(produce),
+        )
+
+        assertEquals(listOf("item-2"), items.map { it.id })
+    }
+
+    @Test
+    fun `an item with a negative price is dropped`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(price = BigDecimal("-0.01"))),
+            categories = listOf(produce),
+        )
+
+        assertTrue(items.isEmpty())
+    }
+
+    @Test
+    fun `a duplicated item uuid resolves to the later element`() {
+        val items = joinCatalog(
+            items = listOf(
+                itemDto(uuid = "item-1", name = "Old bananas"),
+                itemDto(uuid = "item-1", name = "New bananas"),
+            ),
+            categories = listOf(produce),
+        )
+
+        assertEquals(listOf("New bananas"), items.map { it.name })
+    }
+
+    @Test
+    fun `a duplicated category uuid resolves to the later name`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(categoryUuid = "cat-produce")),
+            categories = listOf(
+                FoodItemCategoryDto(uuid = "cat-produce", name = "Old produce"),
+                FoodItemCategoryDto(uuid = "cat-produce", name = "New produce"),
+            ),
+        )
+
+        assertEquals("New produce", items.single().categoryName)
+    }
+
+    @Test
+    fun `a category with a blank name is ignored and its items render unlabelled`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(categoryUuid = "cat-produce")),
+            categories = listOf(FoodItemCategoryDto(uuid = "cat-produce", name = "")),
+        )
+
         assertNull(items.single().categoryName)
     }
 

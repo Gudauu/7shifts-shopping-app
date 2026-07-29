@@ -22,6 +22,14 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   assumption "a missing image must not hide the item" as covering an absent key as well
   as a failed download. Identity fields (`uuid`, `name`, `price`) stay required, because
   an unidentifiable or unpriced item is not purchasable.
+- **Data that violates the catalog assumptions is dropped, not shown and not fatal**
+  (Issue #2, follow-up). Retry heals transport failures, not data failures, so the error
+  state with retry is reserved for failed fetches. Payloads decode element by element:
+  an element that fails to decode, an item with a blank `uuid` or `name` or a negative
+  price, and a category with a blank field are dropped and logged. A duplicated uuid
+  resolves to the later element, as an override. This supersedes the fail-loudly reading
+  of "identity fields stay required": a missing required field now costs one element,
+  never the catalog.
 - **Catalog state is activity-scoped, not destination-scoped** (Issue #2). The catalog
   view model is created once per activity and passed into the nav host, rather than by a
   `hiltViewModel()` call inside the catalog destination. Beyond the required

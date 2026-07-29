@@ -153,14 +153,25 @@ picture, so I can decide what I want to buy.
   cent errors once the cart starts summing them. The DTO parses to `BigDecimal` and the
   UI formats at the edge.
 - The two endpoints are fetched independently and joined on device. There is no
-  guaranteed consistency between them.
-- An item whose `category_uuid` matches no category is shown with no category label
-  rather than being hidden or crashing. Losing a purchasable item because of a metadata
+  guaranteed consistency between them. Their failure mode is all-or-nothing: 
+  if either endpoint fails, the screen shows the error state rather than a partial 
+  catalog, because a retry almost always fixes both.
+- `uuid` values identify the item. When two elements share a uuid, the later
+  element overrides the earlier one; the grid keys on the uuid, and later issues rely
+  on it as the cart identity.
+- When `category_uuid` matches no category, it is shown with no category 
+  label rather than being hidden or crashing. Losing a purchasable item because of a metadata
   gap is the worse failure.
-- 30 items with no pagination in the response means the whole list loads at once. No
-  paging.
 - Images are remote PNGs loaded by Coil, with a placeholder while loading and on failure.
   A missing image must not hide the item.
+- An item is shown only if it decodes, its `uuid` and `name` are non-blank, and its
+  `price` parses to a non-negative amount. `category_uuid` and `image_url` remain
+  optional.
+- A category is used only if it decodes with a non-blank `uuid` and `name`; a dropped
+  category leaves its items visible without a label. Duplicate category uuids also
+  resolve to the later element.
+- 30 items with no pagination in the response means the whole list loads at once. No
+  paging.
 
 **Test plan**
 - Unit: DTO to domain mapping, including the price landing as an exact `BigDecimal`.
