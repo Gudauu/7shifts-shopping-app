@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,12 +31,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.sevenshifts.shopping.domain.FoodItem
+import com.sevenshifts.shopping.domain.PriceSortOrder
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CatalogScreen(state: CatalogUiState, onRetry: () -> Unit, onViewCart: () -> Unit, modifier: Modifier = Modifier) {
+fun CatalogScreen(
+    state: CatalogUiState,
+    onRetry: () -> Unit,
+    onSortSelected: (PriceSortOrder?) -> Unit,
+    onViewCart: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -67,7 +76,10 @@ fun CatalogScreen(state: CatalogUiState, onRetry: () -> Unit, onViewCart: () -> 
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
-                        FoodItemGrid(items = state.items, modifier = Modifier.fillMaxSize())
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            PriceSortRow(sort = state.sort, onSortSelected = onSortSelected)
+                            FoodItemGrid(items = state.items, modifier = Modifier.weight(1f))
+                        }
                     }
             }
         }
@@ -86,6 +98,49 @@ private fun ErrorContent(onRetry: () -> Unit, modifier: Modifier = Modifier) {
             Text("Retry")
         }
     }
+}
+
+@Composable
+private fun PriceSortRow(
+    sort: PriceSortOrder?,
+    onSortSelected: (PriceSortOrder?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        PriceSortChip(
+            label = "Price: low to high",
+            order = PriceSortOrder.ASCENDING,
+            activeSort = sort,
+            onSortSelected = onSortSelected,
+        )
+        PriceSortChip(
+            label = "Price: high to low",
+            order = PriceSortOrder.DESCENDING,
+            activeSort = sort,
+            onSortSelected = onSortSelected,
+        )
+    }
+}
+
+@Composable
+private fun PriceSortChip(
+    label: String,
+    order: PriceSortOrder,
+    activeSort: PriceSortOrder?,
+    onSortSelected: (PriceSortOrder?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selected = activeSort == order
+    FilterChip(
+        selected = selected,
+        // Tapping the active chip clears the sort and restores the API's order.
+        onClick = { onSortSelected(if (selected) null else order) },
+        label = { Text(label) },
+        modifier = modifier,
+    )
 }
 
 @Composable

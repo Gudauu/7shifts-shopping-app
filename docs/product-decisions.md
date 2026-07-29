@@ -41,6 +41,12 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issue #3 assumptions. -->
 
+- **The active sort can be cleared** (Issue #3). The control is a pair of filter chips,
+  and tapping the active chip deselects it, returning the list to the API's order. The
+  initial assumption made API order the default before any choice; this makes it
+  reachable again afterwards, because a chip control that can never be deselected would
+  trap the user in a sort the requirements treat as optional.
+
 ## Filter
 
 <!-- New decisions or deviations from Issue #4 assumptions. -->
