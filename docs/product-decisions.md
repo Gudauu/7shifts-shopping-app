@@ -88,6 +88,12 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   quantity is the direct representation of "the same item can be added repeatedly". It
   also preserves first-added order, which issue #6 assumes for the cart rows, without
   the cart screen having to aggregate raw adds itself.
+- **Each card shows its own in-cart quantity next to a green add sign** (Issue #5,
+  review). The badge answers "how much in total", but while browsing the useful question
+  is "how many of this one do I already have", so a card shows ×N beside its add control
+  once the item is in the cart and nothing before. The labeled "Add" button became a
+  green plus icon drawn in-app, because the pinned material3 no longer brings
+  material-icons along and an icon set is not worth a dependency of its own.
 
 ## Purchase
 

@@ -56,6 +56,7 @@ class CatalogViewModel @Inject constructor(private val repository: CatalogReposi
                         categories = load.catalog.categories,
                         selectedCategoryIds = selected,
                         cartItemCount = cartLines.totalQuantity,
+                        cartQuantities = cartLines.associate { it.item.id to it.quantity },
                     )
                 }
             }
