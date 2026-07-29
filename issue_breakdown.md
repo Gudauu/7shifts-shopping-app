@@ -353,28 +353,33 @@ starting over.
 **Context:** `docs/product-decisions.md#cart`
 
 **Scope**
-- A remove control on each cart row.
+- A quantity decrease control on each item row on the cart screen.
+- Each tap removes one unit of the item.
 - Totals and the badge update immediately.
 
 **Acceptance criteria**
-- [ ] Removing a row deletes the whole line, including all of its quantity.
-- [ ] The order total and the cart badge both update.
-- [ ] Removing the last row shows the empty cart state.
+- [ ] Decreasing an item with a quantity greater than 1 removes one unit and keeps the
+  row visible with the updated quantity.
+- [ ] Decreasing an item with a quantity of 1 removes its final unit and deletes the row.
+- [ ] The order total and the cart badge both decrease by one unit.
+- [ ] Removing the final unit from the cart shows the empty cart state.
 
 **Out of scope**
-- Decrementing quantity by one, undo, swipe-to-delete.
+- Removing a whole line in one action, increasing quantity inline, undo, swipe-to-delete.
 
 **Assumptions**
-- **Remove deletes the entire line rather than decrementing.** The requirement says
-  "items can be removed from the cart" with no mention of quantity adjustment, and a
-  remove control that silently decrements would surprise a user with three of something.
-  This is the assumption I would most want confirmed by a product owner.
+- **Removal happens one unit at a time.** The decrease control lets shoppers correct the
+  quantity without removing every unit of an item. At quantity 1, the same control
+  removes the final unit and its row.
 - No confirmation dialog. The action is cheap to reverse by re-adding.
 
 **Test plan**
-- Unit: removing a line drops its full quantity from the total count.
-- Unit: removing the only line leaves the cart empty.
-- Robolectric: tapping remove updates the rendered totals and the badge.
+- Unit: decreasing a line with multiple units reduces its quantity, total count, and
+  order total by one unit.
+- Unit: decreasing a line at quantity 1 removes it; removing the final cart unit leaves
+  the cart empty.
+- Robolectric: tapping decrease updates the rendered quantity, totals, and badge, then
+  removes the row when its final unit is removed.
 
 ---
 
