@@ -2,6 +2,7 @@ package com.sevenshifts.shopping.ui.catalog
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -80,7 +82,13 @@ fun CatalogScreen(
                         // read as something needing attention. The count lives beside
                         // the catalog section, so it stays through loading and errors.
                         if (state.cartItemCount > 0) {
-                            Badge(modifier = Modifier.padding(start = 6.dp)) {
+                            Badge(
+                                // The default badge red is Material's error colour and
+                                // reads as an alert; the count is neutral information.
+                                containerColor = CartBadgeBlue,
+                                contentColor = Color.White,
+                                modifier = Modifier.padding(start = 6.dp),
+                            ) {
                                 Text(state.cartItemCount.toString())
                             }
                         }
@@ -353,7 +361,15 @@ private fun FoodItemCard(
                     // large-font-scale layout is part of the manual emulator check.
                     modifier = Modifier.weight(1f),
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // The pill groups the quantity with the control that changes it, so
+                // "×2 +" reads as one unit rather than two stray glyphs on the card.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.background(
+                        color = AddSignGreen.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(percent = 50),
+                    ),
+                ) {
                     if (quantityInCart > 0) {
                         Text(
                             text = "×$quantityInCart",
@@ -361,9 +377,11 @@ private fun FoodItemCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             // "×2" would be read as "multiplication sign 2", and every
                             // card shows the same shape, so TalkBack gets the item name.
-                            modifier = Modifier.semantics {
-                                contentDescription = "$quantityInCart of ${item.name} in the cart"
-                            },
+                            modifier = Modifier
+                                .padding(start = 12.dp)
+                                .semantics {
+                                    contentDescription = "$quantityInCart of ${item.name} in the cart"
+                                },
                         )
                     }
                     IconButton(
@@ -384,6 +402,9 @@ private fun FoodItemCard(
 
 /** Green 600: reads as "add" on both the light and the dark card surface. */
 private val AddSignGreen = Color(0xFF43A047)
+
+/** Blue 800: white text stays readable, and blue reads as information, not alarm. */
+private val CartBadgeBlue = Color(0xFF1565C0)
 
 /**
  * A green plus sign, drawn by hand because the pinned material3 no longer brings
