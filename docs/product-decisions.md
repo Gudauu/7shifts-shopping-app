@@ -124,6 +124,11 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   emulator in light and dark, together with the empty state, a mixed cart's line and
   order totals, and the cart surviving the activity recreation that the theme switch
   forces.
+- **Cart rows carry a thumbnail and sit in their own card** (Issue #6, review). Plain
+  text rows were hard to scan, so each row shows the item's image on the left and sits
+  in the same card surface the catalog's items use, which separates the rows without
+  needing dividers. A missing image falls back to the same placeholder as the catalog
+  card rather than collapsing the row; checked on the emulator in light and dark.
 
 ## Purchase
 

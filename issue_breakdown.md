@@ -338,7 +338,7 @@ before buying.
 **Test plan**
 - Unit: line totals and order total over a mixed cart, asserting exact `BigDecimal`
   values.
-- Unit: an empty cart totals `$0.00`.
+- Unit: an empty cart shows "Your cart is empty".
 - Robolectric: a cart with a duplicated item renders one row with quantity 2 and the
   correct totals.
 
