@@ -55,8 +55,7 @@ import coil3.compose.AsyncImage
 import com.sevenshifts.shopping.domain.FoodCategory
 import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
-import java.math.BigDecimal
-import java.math.RoundingMode
+import com.sevenshifts.shopping.ui.components.formatPrice
 import kotlinx.coroutines.flow.drop
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -430,6 +429,3 @@ private fun AddSign(modifier: Modifier = Modifier) {
         )
     }
 }
-
-/** Money stays [BigDecimal] everywhere else; it becomes `$0.00` text only here. */
-private fun formatPrice(price: BigDecimal): String = "$" + price.setScale(2, RoundingMode.HALF_UP).toPlainString()
