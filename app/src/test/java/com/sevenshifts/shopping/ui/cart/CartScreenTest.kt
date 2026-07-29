@@ -76,6 +76,17 @@ class CartScreenTest {
         assertRenderedOrder("Milk", "Bananas", "Total")
     }
 
+    @Test
+    fun `a row without an image still renders its name and totals`() {
+        val cart = Cart()
+        cart.add(foodItem(id = "oats", name = "Plain oats", price = BigDecimal("3.25"), imageUrl = null))
+
+        setContent(cart)
+
+        composeRule.onNodeWithText("Plain oats").assertIsDisplayed()
+        composeRule.onNodeWithText("1 × $3.25").assertIsDisplayed()
+    }
+
     // The fixture price drops the trailing zero, so this fails if the amount is ever
     // rendered with toString instead of the two-decimal formatter.
     @Test
