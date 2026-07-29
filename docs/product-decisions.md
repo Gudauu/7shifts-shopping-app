@@ -85,7 +85,9 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   confirmation that an add landed. The standalone badge beside the button text, rather
   than a `BadgedBox` overlay that the button's clipping could cut, renders as an intact
   pill on a phone-sized emulator; Robolectric resolves the badge text on the merged
-  button node, so that look is emulator evidence, not test evidence.
+  button node, so that look is emulator evidence, not test evidence. The badge is blue
+  rather than Material's default error red, because the count is neutral information
+  and red reads as an alert.
 - **The cart stores lines of item and quantity, keyed by uuid** (Issue #5). The badge
   only needs a total, but re-adding an item has to register somewhere, and a line with a
   quantity is the direct representation of "the same item can be added repeatedly". It
@@ -108,11 +110,13 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   text can ever crowd the row on the JVM. The check belongs to the manual emulator pass
   alongside the badge's visual placement.
 - **Each card shows its own in-cart quantity next to a green add sign** (Issue #5,
-  review). The badge answers "how much in total", but while browsing the useful question
-  is "how many of this one do I already have", so a card shows ×N beside its add control
-  once the item is in the cart and nothing before. The labeled "Add" button became a
-  green plus icon drawn in-app, because the pinned material3 no longer brings
-  material-icons along and an icon set is not worth a dependency of its own.
+  review; emulator check). The badge answers "how much in total", but while browsing the
+  useful question is "how many of this one do I already have", so a card shows ×N beside
+  its add control once the item is in the cart and nothing before. The labeled "Add"
+  button became a green plus icon drawn in-app, because the pinned material3 no longer
+  brings material-icons along and an icon set is not worth a dependency of its own. The
+  quantity and the plus sit together in a translucent light-green pill, so they read as
+  one control rather than two stray glyphs; checked on the emulator in light and dark.
 
 ## Purchase
 
