@@ -35,8 +35,9 @@ class ShoppingApiTest {
     }
 
     @Test
-    fun `food items come from the documented endpoint and parse with the production Json`() = runTest {
-        // The extra key pins ignoreUnknownKeys in the production configuration.
+    fun `food items come from the documented endpoint and invalid elements are dropped`() = runTest {
+        // The unknown key pins ignoreUnknownKeys in the production configuration; the
+        // second element is malformed and must cost only itself, not the payload.
         val api = apiServing(
             """
             [
@@ -47,12 +48,13 @@ class ShoppingApiTest {
                 "category_uuid": "c1",
                 "image_url": "https://example.test/bananas.png",
                 "not_in_the_dto": true
-              }
+              },
+              {"uuid": "u2"}
             ]
             """.trimIndent(),
         )
 
-        val items = api.getFoodItems()
+        val items = api.getFoodItems().decodeValidElements(FoodItemDto.serializer())
 
         assertEquals(listOf("https://7shifts.github.io/mobile-takehome/api/food_items.json"), requestedUrls)
         assertEquals("Bananas", items.single().name)
@@ -63,7 +65,7 @@ class ShoppingApiTest {
     fun `categories come from the documented endpoint and parse with the production Json`() = runTest {
         val api = apiServing("""[{"uuid": "c1", "name": "Produce"}]""")
 
-        val categories = api.getFoodItemCategories()
+        val categories = api.getFoodItemCategories().decodeValidElements(FoodItemCategoryDto.serializer())
 
         assertEquals(listOf("https://7shifts.github.io/mobile-takehome/api/food_item_categories.json"), requestedUrls)
         assertEquals("Produce", categories.single().name)
