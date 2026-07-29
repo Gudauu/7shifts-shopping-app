@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
-import com.sevenshifts.shopping.testing.foodItem
+import com.sevenshifts.shopping.testing.catalog
 import com.sevenshifts.shopping.ui.catalog.CatalogViewModel
 import org.junit.Rule
 import org.junit.Test
@@ -19,7 +19,7 @@ class ShoppingNavHostTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun catalogViewModel() = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(listOf(foodItem())))))
+    private fun catalogViewModel() = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(catalog()))))
 
     @Test
     fun `the app opens on the food items screen`() {

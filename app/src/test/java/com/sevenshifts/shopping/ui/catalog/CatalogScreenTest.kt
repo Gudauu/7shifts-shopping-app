@@ -2,17 +2,22 @@ package com.sevenshifts.shopping.ui.catalog
 
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
+import com.sevenshifts.shopping.testing.catalog
+import com.sevenshifts.shopping.testing.foodCategory
 import com.sevenshifts.shopping.testing.foodItem
 import java.io.IOException
 import java.math.BigDecimal
@@ -35,10 +40,17 @@ class CatalogScreenTest {
         composeRule.setContent {
             CatalogScreen(
                 state = CatalogUiState.Content(
-                    listOf(foodItem(name = "Bananas", price = BigDecimal("1.49"), categoryName = "Produce")),
+                    listOf(
+                        foodItem(
+                            name = "Bananas",
+                            price = BigDecimal("1.49"),
+                            category = foodCategory(name = "Produce"),
+                        ),
+                    ),
                 ),
                 onRetry = {},
                 onSortSelected = {},
+                onCategoryToggled = {},
                 onViewCart = {},
             )
         }
@@ -55,6 +67,7 @@ class CatalogScreenTest {
                 state = CatalogUiState.Content(listOf(foodItem(name = "Milk", price = BigDecimal("4.9")))),
                 onRetry = {},
                 onSortSelected = {},
+                onCategoryToggled = {},
                 onViewCart = {},
             )
         }
@@ -69,6 +82,7 @@ class CatalogScreenTest {
                 state = CatalogUiState.Content(listOf(foodItem(name = "Plain oats", imageUrl = null))),
                 onRetry = {},
                 onSortSelected = {},
+                onCategoryToggled = {},
                 onViewCart = {},
             )
         }
@@ -80,9 +94,10 @@ class CatalogScreenTest {
     fun `an item without a category still renders`() {
         composeRule.setContent {
             CatalogScreen(
-                state = CatalogUiState.Content(listOf(foodItem(name = "Mystery snack", categoryName = null))),
+                state = CatalogUiState.Content(listOf(foodItem(name = "Mystery snack", category = null))),
                 onRetry = {},
                 onSortSelected = {},
+                onCategoryToggled = {},
                 onViewCart = {},
             )
         }
@@ -93,7 +108,13 @@ class CatalogScreenTest {
     @Test
     fun `loading shows a spinner`() {
         composeRule.setContent {
-            CatalogScreen(state = CatalogUiState.Loading, onRetry = {}, onSortSelected = {}, onViewCart = {})
+            CatalogScreen(
+                state = CatalogUiState.Loading,
+                onRetry = {},
+                onSortSelected = {},
+                onCategoryToggled = {},
+                onViewCart = {},
+            )
         }
 
         composeRule
@@ -108,6 +129,7 @@ class CatalogScreenTest {
                 state = CatalogUiState.Content(emptyList()),
                 onRetry = {},
                 onSortSelected = {},
+                onCategoryToggled = {},
                 onViewCart = {},
             )
         }
@@ -121,19 +143,11 @@ class CatalogScreenTest {
             FakeCatalogRepository(
                 listOf(
                     Result.failure(IOException("boom")),
-                    Result.success(listOf(foodItem(name = "Bananas"))),
+                    Result.success(catalog(listOf(foodItem(name = "Bananas")))),
                 ),
             ),
         )
-        composeRule.setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CatalogScreen(
-                state = state,
-                onRetry = viewModel::retry,
-                onSortSelected = viewModel::onSortSelected,
-                onViewCart = {},
-            )
-        }
+        setContent(viewModel)
 
         composeRule.onNodeWithText("Retry").assertIsDisplayed()
 
@@ -144,16 +158,7 @@ class CatalogScreenTest {
 
     @Test
     fun `toggling the sort control reorders the rendered list`() {
-        val viewModel = sortableCatalogViewModel()
-        composeRule.setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CatalogScreen(
-                state = state,
-                onRetry = viewModel::retry,
-                onSortSelected = viewModel::onSortSelected,
-                onViewCart = {},
-            )
-        }
+        setContent(filterableCatalogViewModel())
 
         assertRenderedOrder("Steak", "Milk", "Bananas")
 
@@ -168,16 +173,7 @@ class CatalogScreenTest {
 
     @Test
     fun `the active sort is marked selected and deselecting it restores the API order`() {
-        val viewModel = sortableCatalogViewModel()
-        composeRule.setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CatalogScreen(
-                state = state,
-                onRetry = viewModel::retry,
-                onSortSelected = viewModel::onSortSelected,
-                onViewCart = {},
-            )
-        }
+        setContent(filterableCatalogViewModel())
         composeRule.onNodeWithText("Price: low to high").assertIsNotSelected()
 
         composeRule.onNodeWithText("Price: low to high").performClick()
@@ -197,16 +193,7 @@ class CatalogScreenTest {
     @Test
     @Config(qualifiers = "+h800dp")
     fun `applying a sort scrolls the list back to the top`() {
-        val viewModel = sortableCatalogViewModel()
-        composeRule.setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CatalogScreen(
-                state = state,
-                onRetry = viewModel::retry,
-                onSortSelected = viewModel::onSortSelected,
-                onViewCart = {},
-            )
-        }
+        setContent(filterableCatalogViewModel())
         composeRule.onNodeWithText("Steak").assertIsDisplayed()
 
         composeRule.onNodeWithText("Price: low to high").performClick()
@@ -214,20 +201,107 @@ class CatalogScreenTest {
         composeRule.onNodeWithText("Bananas").assertIsDisplayed()
     }
 
-    /** The API order is deliberately not the ascending price order. */
-    private fun sortableCatalogViewModel() = CatalogViewModel(
-        FakeCatalogRepository(
-            listOf(
-                Result.success(
-                    listOf(
-                        foodItem(id = "steak", name = "Steak", price = BigDecimal("12.99")),
-                        foodItem(id = "milk", name = "Milk", price = BigDecimal("4.90")),
-                        foodItem(id = "bananas", name = "Bananas", price = BigDecimal("1.49")),
+    @Test
+    fun `selecting a category chip narrows the list and deselecting it restores the full list`() {
+        setContent(filterableCatalogViewModel())
+        categoryChip("Produce").assertIsNotSelected()
+
+        categoryChip("Produce").performClick()
+
+        categoryChip("Produce").assertIsSelected()
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+        composeRule.onNodeWithText("Steak").assertDoesNotExist()
+        composeRule.onNodeWithText("Milk").assertDoesNotExist()
+
+        categoryChip("Produce").performClick()
+
+        categoryChip("Produce").assertIsNotSelected()
+        assertRenderedOrder("Steak", "Milk", "Bananas")
+    }
+
+    @Test
+    fun `selecting two category chips shows the union of both`() {
+        setContent(filterableCatalogViewModel())
+
+        categoryChip("Produce").performClick()
+        categoryChip("Dairy").performClick()
+
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+        composeRule.onNodeWithText("Milk").assertIsDisplayed()
+        composeRule.onNodeWithText("Steak").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a selection matching no items shows the empty state and keeps the chips available`() {
+        setContent(filterableCatalogViewModel())
+
+        categoryChip("Frozen").performClick()
+
+        composeRule.onNodeWithText("No items in the selected categories").assertIsDisplayed()
+        categoryChip("Frozen").assertIsSelected()
+    }
+
+    @Test
+    fun `a sort and a filter stay applied together`() {
+        setContent(filterableCatalogViewModel())
+
+        composeRule.onNodeWithText("Price: low to high").performClick()
+        categoryChip("Produce").performClick()
+        categoryChip("Meat").performClick()
+
+        assertRenderedOrder("Bananas", "Steak")
+        composeRule.onNodeWithText("Milk").assertDoesNotExist()
+        composeRule.onNodeWithText("Price: low to high").assertIsSelected()
+    }
+
+    private fun setContent(viewModel: CatalogViewModel) {
+        composeRule.setContent {
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            CatalogScreen(
+                state = state,
+                onRetry = viewModel::retry,
+                onSortSelected = viewModel::onSortSelected,
+                onCategoryToggled = viewModel::onCategoryToggled,
+                onViewCart = {},
+            )
+        }
+    }
+
+    /**
+     * The API order is deliberately not the ascending price order, and Frozen deliberately
+     * matches no item. Each category name also appears on its items' cards, so chip
+     * assertions match on the selectable node rather than by text alone.
+     */
+    private fun filterableCatalogViewModel(): CatalogViewModel {
+        val produce = foodCategory(id = "cat-produce", name = "Produce")
+        val dairy = foodCategory(id = "cat-dairy", name = "Dairy")
+        val meat = foodCategory(id = "cat-meat", name = "Meat")
+        val frozen = foodCategory(id = "cat-frozen", name = "Frozen")
+        return CatalogViewModel(
+            FakeCatalogRepository(
+                listOf(
+                    Result.success(
+                        catalog(
+                            items = listOf(
+                                foodItem(id = "steak", name = "Steak", price = BigDecimal("12.99"), category = meat),
+                                foodItem(id = "milk", name = "Milk", price = BigDecimal("4.90"), category = dairy),
+                                foodItem(
+                                    id = "bananas",
+                                    name = "Bananas",
+                                    price = BigDecimal("1.49"),
+                                    category = produce,
+                                ),
+                            ),
+                            categories = listOf(produce, meat, dairy, frozen),
+                        ),
                     ),
                 ),
             ),
-        ),
-    )
+        )
+    }
+
+    private fun categoryChip(name: String): SemanticsNodeInteraction =
+        composeRule.onNode(hasText(name) and isSelectable())
 
     private fun assertRenderedOrder(vararg names: String) {
         val tops = names.map { composeRule.onNodeWithText(it).getBoundsInRoot().top }
