@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,6 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -34,6 +39,7 @@ import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
 import java.math.BigDecimal
 import java.math.RoundingMode
+import kotlinx.coroutines.flow.drop
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +84,11 @@ fun CatalogScreen(
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
                             PriceSortRow(sort = state.sort, onSortSelected = onSortSelected)
-                            FoodItemGrid(items = state.items, modifier = Modifier.weight(1f))
+                            FoodItemGrid(
+                                items = state.items,
+                                sort = state.sort,
+                                modifier = Modifier.weight(1f),
+                            )
                         }
                     }
             }
@@ -144,9 +154,21 @@ private fun PriceSortChip(
 }
 
 @Composable
-private fun FoodItemGrid(items: List<FoodItem>, modifier: Modifier = Modifier) {
+private fun FoodItemGrid(items: List<FoodItem>, sort: PriceSortOrder?, modifier: Modifier = Modifier) {
+    val gridState = rememberLazyGridState()
+    val activeSort by rememberUpdatedState(sort)
+    // The keyed items make the grid track the first visible card through a reorder, which
+    // reads as jumping to wherever that card lands. A sort change should present the top
+    // of the new order instead. Dropping the initial value keeps the scroll position when
+    // the composition is restored after a configuration change or navigation.
+    LaunchedEffect(gridState) {
+        snapshotFlow { activeSort }
+            .drop(1)
+            .collect { gridState.scrollToItem(0) }
+    }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),
+        state = gridState,
         modifier = modifier,
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

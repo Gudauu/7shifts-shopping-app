@@ -191,6 +191,29 @@ class CatalogScreenTest {
         assertRenderedOrder("Steak", "Milk", "Bananas")
     }
 
+    // The short window fits roughly one card, so this test can observe where the
+    // viewport lands. Without an explicit scroll the keyed grid follows the first
+    // visible card to its new position at the bottom of the ascending order.
+    @Test
+    @Config(qualifiers = "+h800dp")
+    fun `applying a sort scrolls the list back to the top`() {
+        val viewModel = sortableCatalogViewModel()
+        composeRule.setContent {
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            CatalogScreen(
+                state = state,
+                onRetry = viewModel::retry,
+                onSortSelected = viewModel::onSortSelected,
+                onViewCart = {},
+            )
+        }
+        composeRule.onNodeWithText("Steak").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Price: low to high").performClick()
+
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+    }
+
     /** The API order is deliberately not the ascending price order. */
     private fun sortableCatalogViewModel() = CatalogViewModel(
         FakeCatalogRepository(
