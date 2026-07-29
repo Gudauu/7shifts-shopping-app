@@ -145,3 +145,19 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 ## Purchase
 
 <!-- New decisions or deviations from Issue #8 assumptions and contract design. -->
+
+- **A purchase attempt is readable for uncertain-outcome recovery** (Issue #8, contract
+  review). `POST /api/purchases` now identifies a matching
+  `GET /api/purchases/{purchase_uuid}` resource on success and while a duplicate request
+  is still processing. This narrows the initial assumption that no order record is read
+  back: there is still no order-history or collection endpoint, but the server retains
+  one addressable attempt for at least the idempotency window so the client can resolve
+  a lost or delayed response without risking a second purchase.
+- **Purchase requests carry a CAD quote for verification** (Issue #8, contract review).
+  The request requires the last displayed unit price and `CAD`, resolving the initial
+  assumption that prices may be sent. The server still reloads current prices and owns
+  every line total; a changed quote requires shopper review and a new logical attempt.
+- **Purchase recovery stays behind the repository boundary** (Issue #8, contract review).
+  The data implementation owns idempotency keys, safe retries, and polling. The domain
+  sees a completed purchase or typed terminal failure, while the UI remains in one
+  in-flight state throughout recovery.
