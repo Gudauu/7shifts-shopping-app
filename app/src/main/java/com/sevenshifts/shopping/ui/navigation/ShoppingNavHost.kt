@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sevenshifts.shopping.ui.cart.CartScreen
+import com.sevenshifts.shopping.ui.cart.CartViewModel
 import com.sevenshifts.shopping.ui.catalog.CatalogScreen
 import com.sevenshifts.shopping.ui.catalog.CatalogViewModel
 import kotlinx.serialization.Serializable
@@ -25,16 +26,17 @@ object Catalog
 object Cart
 
 /**
- * The catalog view model is a parameter rather than a `hiltViewModel()` call inside the
- * destination: tests construct one directly with a fake repository, and in production the
- * default scopes it to the activity, so catalog state survives both configuration changes
- * and navigating to the cart and back without refetching.
+ * The view models are parameters rather than `hiltViewModel()` calls inside the
+ * destinations: tests construct them directly over a fake repository and a shared cart,
+ * and in production the defaults scope them to the activity, so catalog state survives
+ * both configuration changes and navigating to the cart and back without refetching.
  */
 @Composable
 fun ShoppingNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     catalogViewModel: CatalogViewModel = hiltViewModel(),
+    cartViewModel: CartViewModel = hiltViewModel(),
 ) {
     NavHost(
         navController = navController,
@@ -53,7 +55,11 @@ fun ShoppingNavHost(
             )
         }
         composable<Cart> {
-            CartScreen(onBack = { navController.popBackStack() })
+            val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
+            CartScreen(
+                state = cartState,
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

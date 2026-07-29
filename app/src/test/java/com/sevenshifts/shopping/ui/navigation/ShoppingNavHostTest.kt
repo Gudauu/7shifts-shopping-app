@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.domain.Cart
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
 import com.sevenshifts.shopping.testing.catalog
+import com.sevenshifts.shopping.ui.cart.CartViewModel
 import com.sevenshifts.shopping.ui.catalog.CatalogViewModel
 import org.junit.Rule
 import org.junit.Test
@@ -21,20 +22,27 @@ class ShoppingNavHostTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun catalogViewModel() = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(catalog()))), Cart())
+    // Both view models share one cart, mirroring the production @Singleton binding.
+    private val cart = Cart()
+
+    private fun setContent() {
+        val catalogViewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(catalog()))), cart)
+        val cartViewModel = CartViewModel(cart)
+        composeRule.setContent {
+            ShoppingNavHost(catalogViewModel = catalogViewModel, cartViewModel = cartViewModel)
+        }
+    }
 
     @Test
     fun `the app opens on the food items screen`() {
-        val viewModel = catalogViewModel()
-        composeRule.setContent { ShoppingNavHost(catalogViewModel = viewModel) }
+        setContent()
 
         composeRule.onNodeWithText("Food items").assertIsDisplayed()
     }
 
     @Test
     fun `viewing the cart navigates to the cart screen`() {
-        val viewModel = catalogViewModel()
-        composeRule.setContent { ShoppingNavHost(catalogViewModel = viewModel) }
+        setContent()
 
         composeRule.onNodeWithText("View cart").performClick()
 
@@ -43,8 +51,7 @@ class ShoppingNavHostTest {
 
     @Test
     fun `going back from the cart returns to the food items screen`() {
-        val viewModel = catalogViewModel()
-        composeRule.setContent { ShoppingNavHost(catalogViewModel = viewModel) }
+        setContent()
         composeRule.onNodeWithText("View cart").performClick()
 
         composeRule.onNodeWithText("Back").performClick()
@@ -57,13 +64,26 @@ class ShoppingNavHostTest {
     @Test
     @Config(qualifiers = "w320dp-h2000dp")
     fun `the cart badge survives navigating to the cart and back`() {
-        val viewModel = catalogViewModel()
-        composeRule.setContent { ShoppingNavHost(catalogViewModel = viewModel) }
+        setContent()
         composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick()
 
         composeRule.onNodeWithText("View cart").performClick()
         composeRule.onNodeWithText("Back").performClick()
 
         composeRule.onNodeWithText("1").assertIsDisplayed()
+    }
+
+    // End to end across the two screens: adds made on the catalog are what the cart
+    // screen lists, because both view models observe the same cart.
+    @Test
+    @Config(qualifiers = "w320dp-h2000dp")
+    fun `items added on the catalog appear on the cart screen with their quantity`() {
+        setContent()
+        repeat(2) { composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick() }
+
+        composeRule.onNodeWithText("View cart").performClick()
+
+        composeRule.onNodeWithText("2 × $1.49").assertIsDisplayed()
+        composeRule.onNodeWithText("Total").assertIsDisplayed()
     }
 }
