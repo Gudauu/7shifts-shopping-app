@@ -41,6 +41,12 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issue #3 assumptions. -->
 
+- **Applying a sort presents the top of the new order** (Issue #3, emulator check). The
+  keyed lazy grid anchors scrolling to the first visible card, so a reorder made the
+  viewport follow that card to its new position, usually the bottom of the list. The grid
+  now scrolls back to the top when the sort changes, since the point of choosing a sort
+  is to see the leading items of the new order. Restoring the screen after a
+  configuration change or navigation still keeps its scroll position.
 - **The active sort can be cleared** (Issue #3). The control is a pair of filter chips,
   and tapping the active chip deselects it, returning the list to the API's order. The
   initial assumption made API order the default before any choice; this makes it
