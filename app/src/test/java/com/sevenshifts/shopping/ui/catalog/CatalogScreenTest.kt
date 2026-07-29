@@ -55,6 +55,19 @@ class CatalogScreenTest {
     }
 
     @Test
+    fun `an item without an image still renders`() {
+        composeRule.setContent {
+            CatalogScreen(
+                state = CatalogUiState.Content(listOf(foodItem(name = "Plain oats", imageUrl = null))),
+                onRetry = {},
+                onViewCart = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Plain oats").assertIsDisplayed()
+    }
+
+    @Test
     fun `an item without a category still renders`() {
         composeRule.setContent {
             CatalogScreen(

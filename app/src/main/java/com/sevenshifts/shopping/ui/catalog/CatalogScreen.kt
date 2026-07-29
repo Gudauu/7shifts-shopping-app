@@ -106,6 +106,7 @@ private fun FoodItemGrid(items: List<FoodItem>, modifier: Modifier = Modifier) {
 @Composable
 private fun FoodItemCard(item: FoodItem, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
+        val imagePlaceholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant)
         AsyncImage(
             model = item.imageUrl,
             // The name is announced by the Text below; describing the image too would
@@ -115,8 +116,10 @@ private fun FoodItemCard(item: FoodItem, modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .aspectRatio(1f),
             contentScale = ContentScale.Crop,
-            placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
-            error = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+            placeholder = imagePlaceholder,
+            error = imagePlaceholder,
+            // Shown when imageUrl is null; a missing image must not hide the item.
+            fallback = imagePlaceholder,
         )
         Column(
             modifier = Modifier.padding(12.dp),

@@ -1,12 +1,13 @@
 package com.sevenshifts.shopping.data.network
 
 import java.math.BigDecimal
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FoodItemDtoTest {
-    private val json = Json { ignoreUnknownKeys = true }
+    // The production configuration, so these tests cannot drift from what the app parses with.
+    private val json = shoppingJson
 
     @Test
     fun `a JSON float price parses to the exact BigDecimal`() {
@@ -32,5 +33,23 @@ class FoodItemDtoTest {
         )
 
         assertEquals(BigDecimal("3"), dto.price)
+    }
+
+    @Test
+    fun `an item without an image url key parses instead of failing the array`() {
+        val dto = json.decodeFromString<FoodItemDto>(
+            """{"uuid": "u", "name": "Oats", "price": 2.99, "category_uuid": "c"}""",
+        )
+
+        assertNull(dto.imageUrl)
+    }
+
+    @Test
+    fun `an item without a category uuid key parses instead of failing the array`() {
+        val dto = json.decodeFromString<FoodItemDto>(
+            """{"uuid": "u", "name": "Oats", "price": 2.99, "image_url": "https://example.test/oats.png"}""",
+        )
+
+        assertNull(dto.categoryUuid)
     }
 }

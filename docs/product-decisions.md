@@ -15,6 +15,13 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
 
 <!-- New decisions or deviations from Issue #2 assumptions. -->
 
+- **Absent metadata keys are tolerated, not fatal** (Issue #2, review). `image_url` and
+  `category_uuid` are optional in the DTO. kotlinx.serialization fails the whole array
+  over one missing required field, so a single item without an image key would have
+  error-screened all 30 items with a retry that can never succeed. This reads the initial
+  assumption "a missing image must not hide the item" as covering an absent key as well
+  as a failed download. Identity fields (`uuid`, `name`, `price`) stay required, because
+  an unidentifiable or unpriced item is not purchasable.
 - **Catalog state is activity-scoped, not destination-scoped** (Issue #2). The catalog
   view model is created once per activity and passed into the nav host, rather than by a
   `hiltViewModel()` call inside the catalog destination. Beyond the required

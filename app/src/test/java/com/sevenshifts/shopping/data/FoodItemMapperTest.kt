@@ -15,8 +15,8 @@ class FoodItemMapperTest {
         uuid: String = "item-1",
         name: String = "Bananas",
         price: BigDecimal = BigDecimal("1.49"),
-        categoryUuid: String = "cat-produce",
-        imageUrl: String = "https://example.test/bananas.png",
+        categoryUuid: String? = "cat-produce",
+        imageUrl: String? = "https://example.test/bananas.png",
     ) = FoodItemDto(
         uuid = uuid,
         name = name,
@@ -42,6 +42,17 @@ class FoodItemMapperTest {
     fun `an item with an unknown category uuid is kept without a category name`() {
         val items = joinCatalog(
             items = listOf(itemDto(categoryUuid = "cat-missing")),
+            categories = listOf(produce),
+        )
+
+        assertEquals(1, items.size)
+        assertNull(items.single().categoryName)
+    }
+
+    @Test
+    fun `an item with no category uuid at all is kept without a category name`() {
+        val items = joinCatalog(
+            items = listOf(itemDto(categoryUuid = null)),
             categories = listOf(produce),
         )
 

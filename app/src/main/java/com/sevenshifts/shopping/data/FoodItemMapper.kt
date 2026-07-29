@@ -16,7 +16,7 @@ fun joinCatalog(items: List<FoodItemDto>, categories: List<FoodItemCategoryDto>)
             id = item.uuid,
             name = item.name,
             price = item.price,
-            categoryName = categoryNamesByUuid[item.categoryUuid],
+            categoryName = item.categoryUuid?.let { categoryNamesByUuid[it] },
             imageUrl = item.imageUrl,
         )
     }
