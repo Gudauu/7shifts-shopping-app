@@ -5,14 +5,7 @@ purchase the cart.
 
 ## Demo
 
-<video src="docs/demo.mp4" controls muted loop playsinline width="320">
-  <a href="docs/demo.mp4">Watch the 35-second demo</a>
-</video>
-
-Launch to purchase in real time, recorded at 1080p on a phone-sized emulator: browsing the
-food items, filtering by category, sorting by price, adding to the cart, adjusting
-quantities, and confirming the purchase. If the player above does not appear, open
-[docs/demo.mp4](docs/demo.mp4) directly.
+https://github.com/user-attachments/assets/9a8a135a-4fbb-4139-bf32-4d42e76bee8f
 
 ## Running it
 
