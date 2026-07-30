@@ -58,8 +58,12 @@ fun ShoppingNavHost(
             val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
             CartScreen(
                 state = cartState,
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    cartViewModel.onCartLeft()
+                    navController.popBackStack()
+                },
                 onDecrease = cartViewModel::onDecrease,
+                onPurchase = cartViewModel::onPurchase,
             )
         }
     }

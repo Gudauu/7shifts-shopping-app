@@ -3,6 +3,8 @@ package com.sevenshifts.shopping.ui.cart
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -12,8 +14,14 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.domain.Cart
+import com.sevenshifts.shopping.domain.PurchaseFailure
+import com.sevenshifts.shopping.domain.PurchaseItemFailure
+import com.sevenshifts.shopping.domain.PurchaseItemFailureReason
+import com.sevenshifts.shopping.domain.PurchaseResult
+import com.sevenshifts.shopping.testing.FakePurchaseRepository
 import com.sevenshifts.shopping.testing.foodItem
 import java.math.BigDecimal
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +45,7 @@ class CartScreenTest {
 
         composeRule.onNodeWithText("Your cart is empty").assertIsDisplayed()
         composeRule.onNodeWithText("Total").assertDoesNotExist()
+        composeRule.onNodeWithText("Purchase").assertIsNotEnabled()
     }
 
     @Test
@@ -124,11 +133,129 @@ class CartScreenTest {
         composeRule.onAllNodesWithText("$2.50").assertCountEquals(1)
     }
 
+    @Test
+    fun `purchase progress disables submission and cart changes but allows leaving`() {
+        val lines = Cart().apply { add(bananas) }.lines.value
+        var backCalls = 0
+        composeRule.setContent {
+            CartScreen(
+                state = CartUiState(
+                    lines = lines,
+                    orderTotal = BigDecimal("1.49"),
+                    purchase = PurchaseUiState.InFlight,
+                ),
+                onBack = { backCalls++ },
+                onDecrease = {},
+                onPurchase = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Purchasing...").assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Remove Bananas from the cart").assertIsNotEnabled()
+        composeRule.onNodeWithText("Back").assertIsEnabled().performClick()
+        assertEquals(1, backCalls)
+    }
+
+    @Test
+    fun `purchase failure keeps the cart visible and offers retry`() {
+        val lines = Cart().apply { add(bananas) }.lines.value
+        var purchaseCalls = 0
+        composeRule.setContent {
+            CartScreen(
+                state = CartUiState(
+                    lines = lines,
+                    orderTotal = BigDecimal("1.49"),
+                    purchase = PurchaseUiState.Failed(PurchaseFailure.TemporarilyUnavailable),
+                ),
+                onBack = {},
+                onDecrease = {},
+                onPurchase = { purchaseCalls++ },
+            )
+        }
+
+        composeRule.onNodeWithText("Purchase failed").assertIsDisplayed()
+        composeRule
+            .onNodeWithText("Purchases are temporarily unavailable. Your cart is unchanged.")
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+        composeRule.onNodeWithText("$1.49 / $1.49").assertIsDisplayed()
+        composeRule.onNodeWithText("Retry").assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(1, purchaseCalls)
+    }
+
+    @Test
+    fun `item failure shows actionable detail without an unsafe retry`() {
+        val lines = Cart().apply { add(bananas) }.lines.value
+        composeRule.setContent {
+            CartScreen(
+                state = CartUiState(
+                    lines = lines,
+                    orderTotal = BigDecimal("1.49"),
+                    purchase = PurchaseUiState.Failed(
+                        PurchaseFailure.ItemsRequireAttention(
+                            items = listOf(
+                                PurchaseItemFailure(
+                                    foodItemId = bananas.id,
+                                    reason = PurchaseItemFailureReason.PRICE_CHANGED,
+                                    expectedUnitPrice = BigDecimal("1.49"),
+                                    currentUnitPrice = BigDecimal("1.59"),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+                onBack = {},
+                onDecrease = {},
+                onPurchase = {},
+            )
+        }
+
+        composeRule
+            .onNodeWithText("Some items need attention before another purchase. Your cart is unchanged.")
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("Bananas changed from $1.49 to $1.59.").assertIsDisplayed()
+        composeRule.onNodeWithText("Update cart to continue").assertIsNotEnabled()
+        composeRule.onNodeWithText("Retry").assertDoesNotExist()
+    }
+
+    @Test
+    fun `purchase success shows confirmation and a way back to shopping`() {
+        var continueCalls = 0
+        composeRule.setContent {
+            CartScreen(
+                state = CartUiState(
+                    purchase = PurchaseUiState.Succeeded(
+                        purchaseId = "purchase-1",
+                        total = BigDecimal("2.98"),
+                    ),
+                ),
+                onBack = { continueCalls++ },
+                onDecrease = {},
+                onPurchase = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Purchase complete").assertIsDisplayed()
+        composeRule.onNodeWithText("Your $2.98 purchase is confirmed.").assertIsDisplayed()
+        composeRule.onNodeWithText("Continue shopping").performClick()
+        assertEquals(1, continueCalls)
+    }
+
     private fun setContent(cart: Cart) {
-        val viewModel = CartViewModel(cart)
+        val viewModel = CartViewModel(
+            cart,
+            FakePurchaseRepository(
+                listOf(PurchaseResult.Failed(PurchaseFailure.TemporarilyUnavailable)),
+            ),
+        )
         composeRule.setContent {
             val state by viewModel.uiState.collectAsStateWithLifecycle()
-            CartScreen(state = state, onBack = {}, onDecrease = viewModel::onDecrease)
+            CartScreen(
+                state = state,
+                onBack = {},
+                onDecrease = viewModel::onDecrease,
+                onPurchase = viewModel::onPurchase,
+            )
         }
     }
 

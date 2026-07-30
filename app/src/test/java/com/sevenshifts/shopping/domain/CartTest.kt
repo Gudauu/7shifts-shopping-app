@@ -111,6 +111,17 @@ class CartTest {
         assertEquals(BigDecimal.ZERO, emptyList<CartLine>().orderTotal)
     }
 
+    @Test
+    fun `clearing removes every cart line`() {
+        val cart = Cart()
+        cart.add(bananas)
+        cart.add(milk)
+
+        cart.clear()
+
+        assertEquals(emptyList<CartLine>(), cart.lines.value)
+    }
+
     // 0.10 and 0.20 have no exact binary representation, so a cart summed in doubles
     // shows cent drift here; the exact total proves the money stays decimal.
     @Test

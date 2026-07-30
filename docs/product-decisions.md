@@ -161,3 +161,17 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   The data implementation owns idempotency keys, safe retries, and polling. The domain
   sees a completed purchase or typed terminal failure, while the UI remains in one
   in-flight state throughout recovery.
+- **An in-flight purchase freezes cart changes but not navigation** (Issue #8, review).
+  Quantity controls stay disabled while the repository is submitting or recovering an
+  immutable request snapshot. The shopper can still leave a hanging operation; doing so
+  cancels local recovery, preserves the cart, and records an unresolved outcome rather
+  than allowing a potentially duplicative new purchase.
+- **Retry follows the contract's safety signal** (Issue #8, review). The acceptance
+  criterion's retry is shown for failures where an unchanged retry is safe. Item,
+  validation, unresolved-outcome, and client-state failures instead show actionable
+  detail with purchase disabled; changing the cart clears correctable item or validation
+  failures, while an unresolved outcome remains blocked to avoid a duplicate charge.
+- **Success waits for explicit acknowledgement** (Issue #8, emulator check). The completed
+  cart is replaced by a confirmation showing the authoritative total and a "Continue
+  shopping" action. It does not disappear on a timer, so the result remains perceivable;
+  continuing or going back clears the transient confirmation and returns to the catalog.
