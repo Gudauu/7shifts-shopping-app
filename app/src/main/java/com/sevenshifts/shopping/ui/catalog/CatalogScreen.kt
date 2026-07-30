@@ -1,5 +1,8 @@
 package com.sevenshifts.shopping.ui.catalog
 
+import android.content.res.Configuration
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -12,8 +15,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -35,10 +40,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -47,10 +57,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.sevenshifts.shopping.domain.FoodCategory
@@ -58,6 +71,7 @@ import com.sevenshifts.shopping.domain.FoodItem
 import com.sevenshifts.shopping.domain.PriceSortOrder
 import com.sevenshifts.shopping.ui.components.formatPrice
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +88,7 @@ fun CatalogScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Food items") },
+                title = { Text("Shopping") },
                 actions = {
                     TextButton(onClick = onViewCart) {
                         Text("View cart")
@@ -83,10 +97,10 @@ fun CatalogScreen(
                         // the catalog section, so it stays through loading and errors.
                         if (state.cartItemCount > 0) {
                             Badge(
-                                // The default badge red is Material's error colour and
-                                // reads as an alert; the count is neutral information.
-                                containerColor = CartBadgeBlue,
-                                contentColor = Color.White,
+                                // The badge and checkout action use the same theme accent,
+                                // making the cart journey read as one consistent action.
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(start = 6.dp)
                                     .semantics {
@@ -123,10 +137,11 @@ fun CatalogScreen(
                         )
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            PriceSortRow(sort = catalog.sort, onSortSelected = onSortSelected)
-                            CategoryFilterRow(
+                            CatalogControls(
+                                sort = catalog.sort,
                                 categories = catalog.categories,
                                 selectedCategoryIds = catalog.selectedCategoryIds,
+                                onSortSelected = onSortSelected,
                                 onCategoryToggled = onCategoryToggled,
                             )
                             if (catalog.items.isEmpty()) {
@@ -166,6 +181,91 @@ private fun ErrorContent(onRetry: () -> Unit, modifier: Modifier = Modifier) {
         Button(onClick = onRetry) {
             Text("Retry")
         }
+    }
+}
+
+@Composable
+private fun CatalogControls(
+    sort: PriceSortOrder?,
+    categories: List<FoodCategory>,
+    selectedCategoryIds: Set<String>,
+    onSortSelected: (PriceSortOrder?) -> Unit,
+    onCategoryToggled: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    var landscapeControlsExpanded by remember(isLandscape) { mutableStateOf(false) }
+    val controlsExpanded = !isLandscape || landscapeControlsExpanded
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (isLandscape) {
+            val stateLabel = if (controlsExpanded) "Expanded" else "Collapsed"
+            TextButton(
+                onClick = { landscapeControlsExpanded = !landscapeControlsExpanded },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .semantics {
+                        stateDescription = "$stateLabel. ${catalogControlsSummary(sort, selectedCategoryIds.size)}"
+                    },
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text("Sort & categories")
+                    Text(
+                        text = catalogControlsSummary(sort, selectedCategoryIds.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                ExpandCollapseSign(expanded = controlsExpanded)
+            }
+        }
+
+        if (controlsExpanded) {
+            PriceSortRow(sort = sort, onSortSelected = onSortSelected)
+            CategoryFilterRow(
+                categories = categories,
+                selectedCategoryIds = selectedCategoryIds,
+                onCategoryToggled = onCategoryToggled,
+            )
+        }
+    }
+}
+
+private fun catalogControlsSummary(sort: PriceSortOrder?, selectedCategoryCount: Int): String {
+    val sortLabel = when (sort) {
+        PriceSortOrder.ASCENDING -> "Low to high"
+        PriceSortOrder.DESCENDING -> "High to low"
+        null -> "Default order"
+    }
+    val categoryLabel = when (selectedCategoryCount) {
+        0 -> "all categories"
+        1 -> "1 category"
+        else -> "$selectedCategoryCount categories"
+    }
+    return "$sortLabel, $categoryLabel"
+}
+
+@Composable
+private fun ExpandCollapseSign(expanded: Boolean, modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.primary
+    Canvas(modifier = modifier.size(20.dp)) {
+        val left = if (expanded) {
+            Offset(size.width * 0.2f, size.height * 0.65f)
+        } else {
+            Offset(size.width * 0.2f, size.height * 0.35f)
+        }
+        val middle = if (expanded) {
+            Offset(size.width * 0.5f, size.height * 0.35f)
+        } else {
+            Offset(size.width * 0.5f, size.height * 0.65f)
+        }
+        val right = Offset(size.width * 0.8f, left.y)
+        drawLine(color, left, middle, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+        drawLine(color, middle, right, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
     }
 }
 
@@ -219,29 +319,129 @@ private fun CategoryFilterRow(
     onCategoryToggled: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Chips keep the categories endpoint's order. The row scrolls sideways rather than
-    // wrapping so the grid keeps its vertical space on narrow screens, and an edge fade
-    // signals the overflow, since a cleanly ending row reads as the whole list.
+    // Chips keep the endpoint order and stay in one row to preserve grid space. The
+    // fades retain the overflow cue, while the functional arrows make horizontal
+    // scrolling explicit for shoppers who do not discover the swipe gesture.
     val scrollState = rememberScrollState()
     val background = MaterialTheme.colorScheme.background
+    val coroutineScope = rememberCoroutineScope()
+    val hasOverflow = scrollState.maxValue > 0
     Row(
-        modifier = modifier
-            .fadedOverflowEdges(scrollState, background)
-            .horizontalScroll(scrollState)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        categories.forEach { category ->
-            FilterChip(
-                selected = category.id in selectedCategoryIds,
-                onClick = { onCategoryToggled(category.id) },
-                label = { Text(category.name) },
+        if (hasOverflow) {
+            CategoryScrollButton(
+                showMore = false,
+                enabled = scrollState.canScrollBackward,
+                onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateToCategoryPage(scrollState.previousCategoryPage())
+                    }
+                },
+            )
+        }
+
+        Row(
+            modifier = (if (hasOverflow) Modifier.weight(1f) else Modifier.fillMaxWidth())
+                .fadedOverflowEdges(scrollState, background)
+                .horizontalScroll(scrollState)
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            categories.forEach { category ->
+                FilterChip(
+                    selected = category.id in selectedCategoryIds,
+                    onClick = { onCategoryToggled(category.id) },
+                    label = { Text(category.name) },
+                )
+            }
+        }
+
+        if (hasOverflow) {
+            CategoryScrollButton(
+                showMore = true,
+                enabled = scrollState.canScrollForward,
+                onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateToCategoryPage(scrollState.nextCategoryPage())
+                    }
+                },
             )
         }
     }
 }
 
+private fun ScrollState.previousCategoryPage(): Int =
+    (value - viewportSize * CATEGORY_PAGE_FRACTION).toInt().coerceAtLeast(0)
+
+private fun ScrollState.nextCategoryPage(): Int =
+    (value + viewportSize * CATEGORY_PAGE_FRACTION).toInt().coerceAtMost(maxValue)
+
+private suspend fun ScrollState.animateToCategoryPage(target: Int) {
+    animateScrollTo(
+        value = target,
+        animationSpec = tween(
+            durationMillis = CATEGORY_SCROLL_ANIMATION_MILLIS,
+            easing = FastOutSlowInEasing,
+        ),
+    )
+}
+
+@Composable
+private fun CategoryScrollButton(
+    showMore: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .padding(horizontal = 2.dp)
+            .size(48.dp)
+            .semantics {
+                contentDescription = if (showMore) "Show more categories" else "Show previous categories"
+            },
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .width(CategoryScrollIndicatorWidth)
+                .height(CategoryScrollIndicatorHeight)
+                .alpha(if (enabled) 1f else 0.2f)
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(4.dp),
+                ),
+        ) {
+            HorizontalChevronSign(
+                pointsRight = showMore == (LocalLayoutDirection.current == LayoutDirection.Ltr),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HorizontalChevronSign(pointsRight: Boolean, color: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(14.dp)) {
+        val outerX = if (pointsRight) size.width * 0.3f else size.width * 0.7f
+        val middleX = if (pointsRight) size.width * 0.7f else size.width * 0.3f
+        val top = Offset(outerX, size.height * 0.2f)
+        val middle = Offset(middleX, size.height * 0.5f)
+        val bottom = Offset(outerX, size.height * 0.8f)
+        drawLine(color, top, middle, strokeWidth = 1.5.dp.toPx(), cap = StrokeCap.Round)
+        drawLine(color, middle, bottom, strokeWidth = 1.5.dp.toPx(), cap = StrokeCap.Round)
+    }
+}
+
 private val OverflowFadeWidth = 24.dp
+private val CategoryScrollIndicatorWidth = 20.dp
+private val CategoryScrollIndicatorHeight = 44.dp
+private const val CATEGORY_PAGE_FRACTION = 0.75f
+private const val CATEGORY_SCROLL_ANIMATION_MILLIS = 280
 
 /**
  * Fades an edge into [background] while more content lies beyond it, so a scrollable row
@@ -413,9 +613,6 @@ private fun cartCountDescription(count: Int): String {
 
 /** Green 600: reads as "add" on both the light and the dark card surface. */
 private val AddSignGreen = Color(0xFF43A047)
-
-/** Blue 800: white text stays readable, and blue reads as information, not alarm. */
-private val CartBadgeBlue = Color(0xFF1565C0)
 
 /**
  * A green plus sign, drawn by hand because the pinned material3 no longer brings

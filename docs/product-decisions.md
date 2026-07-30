@@ -73,6 +73,10 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   category chip: both replace the list, and the point of narrowing it is to see its
   leading items. Restoring the screen after a configuration change or navigation still
   keeps its scroll position.
+- **Category overflow has functional navigation in addition to its fade** (Issue #10,
+  user review). The fade alone did not make sideways scrolling discoverable enough. A
+  shopper can still swipe the single-row chips, but visible previous and next controls
+  now move the row through its pages and carry meaningful accessibility labels.
 
 ## Cart
 
@@ -90,6 +94,9 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   and red reads as an alert. After Issue #7 made per-card quantities plain numbers, the
   merged button gained an explicit `N items in cart` state description, keeping badge
   assertions and accessibility semantics distinct from an identical card count.
+- **The cart badge uses the checkout theme accent** (Issue #10, user review). This
+  supersedes the Issue #5 choice of informational blue: the count now uses the same
+  primary purple as the checkout button so the two stages of the journey feel related.
 - **The cart stores lines of item and quantity, keyed by uuid** (Issue #5). The badge
   only needs a total, but re-adding an item has to register somewhere, and a line with a
   quantity is the direct representation of "the same item can be added repeatedly". It
@@ -175,3 +182,10 @@ deviation supersedes the corresponding initial assumption and becomes raw materi
   cart is replaced by a confirmation showing the authoritative total and a "Continue
   shopping" action. It does not disappear on a timer, so the result remains perceivable;
   continuing or going back clears the transient confirmation and returns to the catalog.
+
+## Polish
+
+- **Landscape starts with catalog controls collapsed behind a stateful summary** (Issue
+  #10, user review). A compact row reports the current sort and selected-category count,
+  and expands on demand. This keeps sorting and filtering reachable without consuming
+  the limited vertical viewport before the product grid.
