@@ -69,4 +69,9 @@ class Cart {
             }
         }
     }
+
+    /** Clears every line after, and only after, a purchase has completed. */
+    fun clear() {
+        _lines.value = emptyList()
+    }
 }

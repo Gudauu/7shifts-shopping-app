@@ -9,10 +9,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sevenshifts.shopping.domain.Cart
+import com.sevenshifts.shopping.domain.CartLine
+import com.sevenshifts.shopping.domain.PurchaseRepository
 import com.sevenshifts.shopping.testing.FakeCatalogRepository
+import com.sevenshifts.shopping.testing.FakePurchaseRepository
 import com.sevenshifts.shopping.testing.catalog
+import com.sevenshifts.shopping.testing.completedPurchaseResult
+import com.sevenshifts.shopping.testing.foodItem
 import com.sevenshifts.shopping.ui.cart.CartViewModel
 import com.sevenshifts.shopping.ui.catalog.CatalogViewModel
+import kotlinx.coroutines.awaitCancellation
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,9 +33,13 @@ class ShoppingNavHostTest {
     // Both view models share one cart, mirroring the production @Singleton binding.
     private val cart = Cart()
 
-    private fun setContent() {
+    private fun setContent(
+        purchaseRepository: PurchaseRepository = FakePurchaseRepository(
+            listOf(completedPurchaseResult(listOf(CartLine(foodItem(), quantity = 1)))),
+        ),
+    ) {
         val catalogViewModel = CatalogViewModel(FakeCatalogRepository(listOf(Result.success(catalog()))), cart)
-        val cartViewModel = CartViewModel(cart)
+        val cartViewModel = CartViewModel(cart, purchaseRepository)
         composeRule.setContent {
             ShoppingNavHost(catalogViewModel = catalogViewModel, cartViewModel = cartViewModel)
         }
@@ -115,5 +125,45 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithText("$1.49 / $2.98").assertIsDisplayed()
         composeRule.onNodeWithText("2").assertIsDisplayed()
         composeRule.onNodeWithText("Total").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h2000dp")
+    fun `leaving a hanging purchase returns to browsing and preserves an unresolved cart`() {
+        val hangingRepository = FakePurchaseRepository(
+            results = listOf(completedPurchaseResult(listOf(CartLine(foodItem(), quantity = 1)))),
+            beforeResult = { awaitCancellation() },
+        )
+        setContent(hangingRepository)
+        composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick()
+        composeRule.onNodeWithText("View cart").performClick()
+        composeRule.onNodeWithText("Purchase").performClick()
+
+        composeRule.onNodeWithText("Purchasing...").assertIsDisplayed()
+        composeRule.onNodeWithText("Back").performClick()
+
+        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("View cart").performClick()
+        composeRule.onNodeWithText("Bananas").assertIsDisplayed()
+        composeRule
+            .onNodeWithText("We could not confirm the purchase outcome. Your cart is unchanged.")
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("Outcome unresolved").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h2000dp")
+    fun `a successful purchase confirms then leaves an empty cart`() {
+        setContent()
+        composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick()
+        composeRule.onNodeWithText("View cart").performClick()
+
+        composeRule.onNodeWithText("Purchase").performClick()
+
+        composeRule.onNodeWithText("Purchase complete").assertIsDisplayed()
+        composeRule.onNodeWithText("Continue shopping").performClick()
+        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("View cart").performClick()
+        composeRule.onNodeWithText("Your cart is empty").assertIsDisplayed()
     }
 }
