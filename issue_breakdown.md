@@ -65,6 +65,7 @@ purchase endpoint.
 | 7 | Remove an item from the cart | Slice |
 | 8 | Design the purchase contract and purchase the cart | Slice + deliverable |
 | 9 | Platform feedback | Deliverable |
+| 10 | Polish the end-to-end shopping experience | Polish |
 
 ---
 
@@ -458,3 +459,56 @@ re-deriving one, a money type so `BigDecimal` handling is not repeated per featu
 convention plugin owning the Gradle gate once a second module exists, screenshot testing
 to close the visual gap that Robolectric cannot cover, and the module split that was
 deliberately deferred in issue #1.
+
+---
+
+## Issue #10: Polish the end-to-end shopping experience
+
+**User value**
+As a shopper, I want the complete browsing, cart, and purchase journey to feel consistent
+and clear, so I can move through it without visual or interaction friction.
+
+**Scope**
+- Audit the integrated journey on a phone-sized emulator after issues #8 and #9 land:
+  browse, sort, filter, add, adjust quantities, and purchase through both success and
+  failure outcomes.
+- Fix concrete visual and interaction inconsistencies found across the catalog, cart, and
+  purchase states, including spacing, hierarchy, control treatment, feedback, and copy.
+- Verify accessibility semantics, touch targets, and layouts at a large font scale.
+- Remove dead UI code, stale comments or copy, and obsolete one-off styling directly
+  exposed by the polish work. Unrelated refactoring remains out of scope.
+- Add or update focused tests when a changed interaction or semantic contract can regress
+  meaningfully on the JVM.
+
+**Acceptance criteria**
+- [ ] The full browse-to-purchase journey has no clipped, overlapping, unreachable, or
+  visually ambiguous controls on a phone-sized emulator at default and large font scales.
+- [ ] Catalog, cart, and purchase states use a consistent visual hierarchy, spacing,
+  control language, and user-facing terminology.
+- [ ] Icon-only actions have meaningful accessibility labels, and controls with changing
+  values expose their current state.
+- [ ] Loading, empty, error, submitting, success, and failure states clearly communicate
+  what happened and the next available action.
+- [ ] The journey is manually checked in light and dark themes, and the findings and final
+  evidence are recorded in the pull request.
+- [ ] `./gradlew verify` passes.
+
+**Out of scope**
+- New shopping capabilities, screens, or changes to the purchase contract.
+- Dependency upgrades, new visual-testing infrastructure, or broad architectural
+  refactoring.
+- Cleanup in code unaffected by an observed polish finding.
+
+**Assumptions**
+- The implementation branch is updated from `main` after issues #8 and #9 merge, so the
+  audit covers the complete integrated app rather than an intermediate feature branch.
+- The emulator audit determines the concrete fixes; this issue is not a speculative
+  redesign or an excuse to restyle already coherent UI.
+- Existing domain behavior and state contracts remain unchanged unless an observed UX
+  defect requires a narrowly documented correction.
+
+**Test plan**
+- Focused Robolectric Compose tests for changed semantics and interactions.
+- Existing unit and Compose suites through `./gradlew verify`.
+- Manual end-to-end emulator pass at default and large font scales in light and dark
+  themes, covering catalog loading and failure plus purchase success and failure.
