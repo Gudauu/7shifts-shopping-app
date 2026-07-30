@@ -1,7 +1,8 @@
 # Issue breakdown
 
 The product requirements refined into the issues I would take into a sprint, in delivery
-order. Each is one pull request.
+order. Each is one pull request. Every issue below links to the GitHub issue it was tracked
+as and the pull request that delivered it.
 
 ## How these were sliced
 
@@ -54,22 +55,27 @@ purchase endpoint.
 
 ## Delivery order
 
-| # | Issue | Type |
-| --- | --- | --- |
-| 1 | Project scaffold and walking skeleton | Enabler |
-| 2 | Browse the food items | Slice |
-| 3 | Sort food items by price | Slice |
-| 4 | Filter food items by one or more categories | Slice |
-| 5 | Add an item to the cart and see the cart count | Slice |
-| 6 | View the cart | Slice |
-| 7 | Remove an item from the cart | Slice |
-| 8 | Design the purchase contract and purchase the cart | Slice + deliverable |
-| 9 | Platform feedback | Deliverable |
-| 10 | Polish the end-to-end shopping experience | Polish |
+| # | Issue | Type | Tracked as | Delivered by |
+| --- | --- | --- | --- | --- |
+| 1 | Project scaffold and walking skeleton | Enabler | [issue #1](https://github.com/Gudauu/7shifts-shopping-app/issues/1) | [PR #10](https://github.com/Gudauu/7shifts-shopping-app/pull/10) |
+| 2 | Browse the food items | Slice | [issue #2](https://github.com/Gudauu/7shifts-shopping-app/issues/2) | [PR #11](https://github.com/Gudauu/7shifts-shopping-app/pull/11), [PR #13](https://github.com/Gudauu/7shifts-shopping-app/pull/13) |
+| 3 | Sort food items by price | Slice | [issue #3](https://github.com/Gudauu/7shifts-shopping-app/issues/3) | [PR #12](https://github.com/Gudauu/7shifts-shopping-app/pull/12) |
+| 4 | Filter food items by one or more categories | Slice | [issue #4](https://github.com/Gudauu/7shifts-shopping-app/issues/4) | [PR #14](https://github.com/Gudauu/7shifts-shopping-app/pull/14) |
+| 5 | Add an item to the cart and see the cart count | Slice | [issue #5](https://github.com/Gudauu/7shifts-shopping-app/issues/5) | [PR #15](https://github.com/Gudauu/7shifts-shopping-app/pull/15) |
+| 6 | View the cart | Slice | [issue #6](https://github.com/Gudauu/7shifts-shopping-app/issues/6) | [PR #16](https://github.com/Gudauu/7shifts-shopping-app/pull/16) |
+| 7 | Remove an item from the cart | Slice | [issue #7](https://github.com/Gudauu/7shifts-shopping-app/issues/7) | [PR #17](https://github.com/Gudauu/7shifts-shopping-app/pull/17) |
+| 8 | Design the purchase contract and purchase the cart | Slice + deliverable | [issue #8](https://github.com/Gudauu/7shifts-shopping-app/issues/8) | [PR #18](https://github.com/Gudauu/7shifts-shopping-app/pull/18) |
+| 9 | Platform feedback | Deliverable | [issue #9](https://github.com/Gudauu/7shifts-shopping-app/issues/9) | [PR #21](https://github.com/Gudauu/7shifts-shopping-app/pull/21) |
+| 10 | Polish the end-to-end shopping experience | Polish | [issue #19](https://github.com/Gudauu/7shifts-shopping-app/issues/19) | [PR #22](https://github.com/Gudauu/7shifts-shopping-app/pull/22) |
+
+The delivery-order number is this document's own sequence. Issue #10 was filed on GitHub
+after issues #1 to #9 were closed, so it is tracked there as issue #19.
 
 ---
 
 ## Issue #1: Project scaffold and walking skeleton
+
+**GitHub:** [issue #1](https://github.com/Gudauu/7shifts-shopping-app/issues/1), delivered by [PR #10](https://github.com/Gudauu/7shifts-shopping-app/pull/10)
 
 **Type:** Enabler. No user-facing behaviour.
 
@@ -121,6 +127,9 @@ this once up front means issues #2 through #8 are pure feature work.
 ---
 
 ## Issue #2: Browse the food items
+
+**GitHub:** [issue #2](https://github.com/Gudauu/7shifts-shopping-app/issues/2), delivered by [PR #11](https://github.com/Gudauu/7shifts-shopping-app/pull/11) with a
+follow-up data-validation fix in [PR #13](https://github.com/Gudauu/7shifts-shopping-app/pull/13)
 
 **User value**
 As a shopper, I want to see all the food items with their name, price, category, and
@@ -185,6 +194,8 @@ picture, so I can decide what I want to buy.
 
 ## Issue #3: Sort food items by price
 
+**GitHub:** [issue #3](https://github.com/Gudauu/7shifts-shopping-app/issues/3), delivered by [PR #12](https://github.com/Gudauu/7shifts-shopping-app/pull/12)
+
 **User value**
 As a shopper on a budget, I want to order the list by price, so I can find the cheapest
 or most expensive options quickly.
@@ -220,6 +231,8 @@ or most expensive options quickly.
 ---
 
 ## Issue #4: Filter food items by one or more categories
+
+**GitHub:** [issue #4](https://github.com/Gudauu/7shifts-shopping-app/issues/4), delivered by [PR #14](https://github.com/Gudauu/7shifts-shopping-app/pull/14)
 
 **User value**
 As a shopper, I want to narrow the list to the categories I care about, so I can find
@@ -264,6 +277,8 @@ what I need without scrolling all 30 items.
 
 ## Issue #5: Add items to the cart and see the cart count
 
+**GitHub:** [issue #5](https://github.com/Gudauu/7shifts-shopping-app/issues/5), delivered by [PR #15](https://github.com/Gudauu/7shifts-shopping-app/pull/15)
+
 **User value**
 As a shopper, I want to add items to my cart and see how many I have, so I can build up
 an order while browsing.
@@ -306,6 +321,8 @@ an order while browsing.
 
 ## Issue #6: View the cart
 
+**GitHub:** [issue #6](https://github.com/Gudauu/7shifts-shopping-app/issues/6), delivered by [PR #16](https://github.com/Gudauu/7shifts-shopping-app/pull/16)
+
 **User value**
 As a shopper, I want to see what is in my cart and what it costs, so I can check my order
 before buying.
@@ -347,6 +364,8 @@ before buying.
 
 ## Issue #7: Remove items from the cart
 
+**GitHub:** [issue #7](https://github.com/Gudauu/7shifts-shopping-app/issues/7), delivered by [PR #17](https://github.com/Gudauu/7shifts-shopping-app/pull/17)
+
 **User value**
 As a shopper, I want to take something out of my cart, so I can correct a mistake without
 starting over.
@@ -385,6 +404,8 @@ starting over.
 ---
 
 ## Issue #8: Design the purchase contract and purchase the cart
+
+**GitHub:** [issue #8](https://github.com/Gudauu/7shifts-shopping-app/issues/8), delivered by [PR #18](https://github.com/Gudauu/7shifts-shopping-app/pull/18)
 
 **User value**
 As a shopper, I want to buy everything in my cart, so I can complete my order.
@@ -446,6 +467,8 @@ As a shopper, I want to buy everything in my cart, so I can complete my order.
 
 ## Issue #9: Platform feedback
 
+**GitHub:** [issue #9](https://github.com/Gudauu/7shifts-shopping-app/issues/9), delivered by [PR #21](https://github.com/Gudauu/7shifts-shopping-app/pull/21)
+
 **Deliverable:** `platform_feedback.md`
 
 **Scope**
@@ -463,6 +486,8 @@ deliberately deferred in issue #1.
 ---
 
 ## Issue #10: Polish the end-to-end shopping experience
+
+**GitHub:** [issue #19](https://github.com/Gudauu/7shifts-shopping-app/issues/19), delivered by [PR #22](https://github.com/Gudauu/7shifts-shopping-app/pull/22)
 
 **User value**
 As a shopper, I want the complete browsing, cart, and purchase journey to feel consistent

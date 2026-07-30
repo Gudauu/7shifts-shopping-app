@@ -3,6 +3,17 @@
 An Android shopping app: browse food items, sort and filter them, add them to a cart, and
 purchase the cart.
 
+## Demo
+
+<video src="docs/demo.mp4" controls muted loop playsinline width="320">
+  <a href="docs/demo.mp4">Watch the 35-second demo</a>
+</video>
+
+Launch to purchase in real time, recorded at 1080p on a phone-sized emulator: browsing the
+food items, filtering by category, sorting by price, adding to the cart, adjusting
+quantities, and confirming the purchase. If the player above does not appear, open
+[docs/demo.mp4](docs/demo.mp4) directly.
+
 ## Running it
 
 Requires JDK 17 and the Android SDK (compileSdk 36).
@@ -57,7 +68,8 @@ emulator at the end of every issue, since the semantics tree cannot assert it.
 ## Documents
 
 - [issue_breakdown.md](issue_breakdown.md) — the requirements refined into issues, with
-  scope and assumptions for each.
+  scope and assumptions for each, and a link from every issue to the pull request that
+  delivered it.
 - `purchase_api_contract.md` — proposed request and response formats for the unimplemented
   purchase endpoint; produced with Issue #8.
 - `platform_feedback.md` — what I would standardize or abstract next to make the following
