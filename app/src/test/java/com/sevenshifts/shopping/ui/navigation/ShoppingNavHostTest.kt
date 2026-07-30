@@ -46,10 +46,10 @@ class ShoppingNavHostTest {
     }
 
     @Test
-    fun `the app opens on the food items screen`() {
+    fun `the app opens on the shopping screen`() {
         setContent()
 
-        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("Shopping").assertIsDisplayed()
     }
 
     @Test
@@ -62,13 +62,13 @@ class ShoppingNavHostTest {
     }
 
     @Test
-    fun `going back from the cart returns to the food items screen`() {
+    fun `going back from the cart returns to the shopping screen`() {
         setContent()
         composeRule.onNodeWithText("View cart").performClick()
 
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
 
-        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("Shopping").assertIsDisplayed()
     }
 
     // The tall window keeps the card's add button inside the touchable viewport; in the
@@ -80,7 +80,7 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithContentDescription("Add Bananas to the cart").performClick()
 
         composeRule.onNodeWithText("View cart").performClick()
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
 
         composeRule
             .onNode(
@@ -102,7 +102,7 @@ class ShoppingNavHostTest {
 
         composeRule.onNodeWithText("$1.49 / $1.49").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Remove Bananas from the cart").assertIsDisplayed()
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule
             .onNode(
                 hasText("View cart") and
@@ -140,9 +140,9 @@ class ShoppingNavHostTest {
         composeRule.onNodeWithText("Purchase").performClick()
 
         composeRule.onNodeWithText("Purchasing...").assertIsDisplayed()
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
 
-        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("Shopping").assertIsDisplayed()
         composeRule.onNodeWithText("View cart").performClick()
         composeRule.onNodeWithText("Bananas").assertIsDisplayed()
         composeRule
@@ -162,7 +162,7 @@ class ShoppingNavHostTest {
 
         composeRule.onNodeWithText("Purchase complete").assertIsDisplayed()
         composeRule.onNodeWithText("Continue shopping").performClick()
-        composeRule.onNodeWithText("Food items").assertIsDisplayed()
+        composeRule.onNodeWithText("Shopping").assertIsDisplayed()
         composeRule.onNodeWithText("View cart").performClick()
         composeRule.onNodeWithText("Your cart is empty").assertIsDisplayed()
     }

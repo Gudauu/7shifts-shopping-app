@@ -152,7 +152,8 @@ class CartScreenTest {
 
         composeRule.onNodeWithText("Purchasing...").assertIsDisplayed().assertIsNotEnabled()
         composeRule.onNodeWithContentDescription("Remove Bananas from the cart").assertIsNotEnabled()
-        composeRule.onNodeWithText("Back").assertIsEnabled().performClick()
+        composeRule.onNodeWithText("Back").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Back").assertIsEnabled().performClick()
         assertEquals(1, backCalls)
     }
 

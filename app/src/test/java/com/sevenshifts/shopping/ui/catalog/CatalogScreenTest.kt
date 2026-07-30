@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
@@ -64,6 +66,7 @@ class CatalogScreenTest {
             )
         }
 
+        composeRule.onNodeWithText("Shopping").assertIsDisplayed()
         composeRule.onNodeWithText("Bananas").assertIsDisplayed()
         composeRule.onNodeWithText("$1.49").assertIsDisplayed()
         composeRule.onNodeWithText("Produce").assertIsDisplayed()
@@ -276,6 +279,53 @@ class CatalogScreenTest {
         // Deliberately neither the items' order (Meat, Dairy, Produce) nor alphabetical,
         // so a rendering that re-sorts or reverses the endpoint's order fails.
         assertChipOrder("Produce", "Meat", "Dairy", "Frozen")
+    }
+
+    @Test
+    fun `overflowing categories provide working explicit scroll controls`() {
+        val categories = List(8) { index ->
+            foodCategory(id = "category-$index", name = "Category ${index + 1}")
+        }
+        composeRule.setContent {
+            CatalogScreen(
+                state = CatalogUiState(
+                    catalog = CatalogState.Content(
+                        items = listOf(foodItem()),
+                        categories = categories,
+                    ),
+                ),
+                onRetry = {},
+                onSortSelected = {},
+                onCategoryToggled = {},
+                onAddToCart = {},
+                onViewCart = {},
+            )
+        }
+
+        composeRule.onNodeWithContentDescription("Show previous categories").assertIsNotEnabled()
+        composeRule
+            .onNodeWithContentDescription("Show more categories")
+            .assertIsDisplayed()
+            .assertIsEnabled()
+            .performClick()
+
+        composeRule.onNodeWithContentDescription("Show previous categories").assertIsEnabled()
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h320dp-land")
+    fun `landscape starts with sort and categories collapsed and can expand them`() {
+        setContent(filterableCatalogViewModel())
+
+        composeRule.onNodeWithText("Sort & categories").assertIsDisplayed()
+        composeRule.onNodeWithText("Default order, all categories").assertIsDisplayed()
+        composeRule.onNodeWithText("Price: low to high").assertDoesNotExist()
+        categoryChip("Produce").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Sort & categories").performClick()
+
+        composeRule.onNodeWithText("Price: low to high").assertIsDisplayed()
+        categoryChip("Produce").assertIsDisplayed()
     }
 
     // From the top of the list a filter change lands at the top regardless, because the

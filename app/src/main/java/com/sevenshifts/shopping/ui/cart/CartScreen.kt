@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,11 +46,13 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.sevenshifts.shopping.domain.CartLine
@@ -78,8 +79,11 @@ fun CartScreen(
             TopAppBar(
                 title = { Text("Your cart") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.semantics { contentDescription = "Back" },
+                    ) {
+                        BackArrowSign(color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
             )
@@ -491,6 +495,39 @@ private fun removalColors(): RemovalColors = if (isSystemInDarkTheme()) {
     RemovalColors(container = Color(0xFF3D2B2A), content = Color(0xFFFFB4AD))
 } else {
     RemovalColors(container = Color(0xFFF9ECEA), content = Color(0xFFB6453D))
+}
+
+/** A navigation arrow drawn in-app so a full icon dependency is not needed. */
+@Composable
+private fun BackArrowSign(color: Color, modifier: Modifier = Modifier) {
+    val pointsLeft = LocalLayoutDirection.current == LayoutDirection.Ltr
+    Canvas(modifier = modifier.size(24.dp)) {
+        val arrowPointX = if (pointsLeft) size.width * 0.2f else size.width * 0.8f
+        val bendX = if (pointsLeft) size.width * 0.55f else size.width * 0.45f
+        val tailX = if (pointsLeft) size.width * 0.88f else size.width * 0.12f
+        val arrowPoint = Offset(arrowPointX, size.height * 0.5f)
+        drawLine(
+            color = color,
+            start = Offset(bendX, size.height * 0.18f),
+            end = arrowPoint,
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = arrowPoint,
+            end = Offset(bendX, size.height * 0.82f),
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = arrowPoint,
+            end = Offset(tailX, size.height * 0.5f),
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Round,
+        )
+    }
 }
 
 /** A minus sign drawn in-app so a full icon dependency is not needed for one control. */
